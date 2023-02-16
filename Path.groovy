@@ -1,8 +1,11 @@
 import com.neuronrobotics.bowlerkernel.Bezier3d.*;
 import com.neuronrobotics.bowlerstudio.creature.MobileBaseLoader
+import com.neuronrobotics.sdk.addons.kinematics.AbstractLink
 import com.neuronrobotics.sdk.addons.kinematics.DHParameterKinematics
+import com.neuronrobotics.sdk.addons.kinematics.ILinkListener
 import com.neuronrobotics.sdk.addons.kinematics.MobileBase
 import com.neuronrobotics.sdk.common.DeviceManager
+import com.neuronrobotics.sdk.pid.PIDLimitEvent
 
 import eu.mihosoft.vrl.v3d.Transform
 
@@ -70,7 +73,31 @@ for(DHParameterKinematics k:base.getAllDHChains() ) {
 drive.setMaxEngineeringUnits(0, total)
 drive.setMinEngineeringUnits(0, 0)
 
+AbstractLink motor = drive.getAbstractLink(0)
 
+motor.addLinkListener(new ILinkListener() {
+	
+	/**
+	 * On link position update.
+	 *
+	 * @param source the source
+	 * @param engineeringUnitsValue the engineering units value
+	 */
+	public void onLinkPositionUpdate(AbstractLink source,double engineeringUnitsValue) {
+		println "Path.groovy update "
+		
+	}
+	
+	/**
+	 * On the event of a limit, this is called.
+	 *
+	 * @param source the source
+	 * @param event the event
+	 */
+	public void onLinkLimit(AbstractLink source,PIDLimitEvent event) {
+		
+	}
+})
 
 if(drive==null)
 	throw new RuntimeException("Dive secion is missing, can not contine!");
