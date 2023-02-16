@@ -15,15 +15,20 @@ import eu.mihosoft.vrl.v3d.Transform
 nameOfCOntroller="PathController"
 
 class PathController{
-
+	def numBezierPieces = 20
 	boolean connected = false;
 	String name
-	
+
 	ILinkListener ll=null;
 	AbstractLink motor;
 	BezierEditor editor
 	BezierEditor editor2
 	BezierEditor editor3
+	def y=[]
+	def unitTFs = []
+	def transforms
+	def tfLengths
+	double total=0;
 	public PathController(String n) {
 		name=n
 	}
@@ -35,7 +40,7 @@ class PathController{
 		def URL="https://github.com/TechnocopiaPlant/TendyTheTankEngine.git"
 
 
-		def numBezierPieces = 5
+
 		editor = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez.json"),numBezierPieces)
 		editor2 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez2.json"),numBezierPieces)
 		editor3 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez3.json"),numBezierPieces)
@@ -44,15 +49,15 @@ class PathController{
 		editor.addBezierToTheEnd(editor2)
 		editor2.addBezierToTheEnd(editor3)
 
-		def y=[]
+		
 
 		y.addAll(editor.transforms())
 		y.addAll(editor2.transforms())
 		y.addAll(editor3.transforms())
 
-		def transforms= y.collect{ TransformFactory.csgToNR(it)}
+		transforms= y.collect{ TransformFactory.csgToNR(it)}
 
-		def unitTFs = []
+		
 
 		for(int i=0;i<transforms.size()-1;i++) {
 			TransformNR start = transforms.get(i)
@@ -60,12 +65,12 @@ class PathController{
 			unitTFs.add(start.inverse().times(end))
 		}
 
-		def tfLengths = unitTFs.collect{
+		tfLengths = unitTFs.collect{
 			return Math.sqrt(Math.pow(it.getX(), 2) + Math.pow(it.getY(), 2)+Math.pow(it.getZ(), 2))
 		}
-		println tfLengths
+		//println tfLengths
 
-		double total=0;
+		
 
 		for(int i=0;i<tfLengths.size();i++) {
 			total+=tfLengths.get(i)
@@ -100,23 +105,9 @@ class PathController{
 			 */
 					public void onLinkPositionUpdate(AbstractLink source,double engineeringUnitsValue) {
 						//
+						TransformNR loc = poseAtLocation( engineeringUnitsValue)
+						drive.setRobotToFiducialTransform(loc)
 
-						double distance=0;
-						int tfIndex=-1;
-						double unitDIstance=0;
-						for(int i=0;i<tfLengths.size();i++) {
-							double distStart = distance
-							distance+=tfLengths.get(i)
-							if(distance>engineeringUnitsValue && tfIndex<0) {
-								tfIndex=i;
-								unitDIstance = 1-(distance-engineeringUnitsValue)/tfLengths.get(i)
-								break;
-							}
-						}
-						println "Path.groovy update "+engineeringUnitsValue+" tf index = "+tfIndex+" unit Distance = "+unitDIstance
-						TransformNR location = transforms.get(tfIndex)
-						TransformNR intermediate = unitTFs.get(tfIndex).scale(unitDIstance)
-						drive.setRobotToFiducialTransform(location.times(intermediate))
 					}
 
 					/**
@@ -126,7 +117,6 @@ class PathController{
 			 * @param event the event
 			 */
 					public void onLinkLimit(AbstractLink source,PIDLimitEvent event) {
-
 					}
 				}
 		motor.addLinkListener(ll)
@@ -135,6 +125,32 @@ class PathController{
 		if(drive==null)
 			throw new RuntimeException("Dive secion is missing, can not contine!");
 		return isAvailable();
+	}
+	public double getTotal() {
+		return total;
+	}
+	
+	public Transform CADposeAtLocation(double engineeringUnitsValue) {
+		return TransformFactory.nrToCSG(poseAtLocation(engineeringUnitsValue) )
+	}
+	
+	public TransformNR poseAtLocation(double engineeringUnitsValue) {
+		double distance=0;
+		int tfIndex=-1;
+		double unitDIstance=0;
+		for(int i=0;i<tfLengths.size();i++) {
+			double distStart = distance
+			distance+=tfLengths.get(i)
+			if(distance>engineeringUnitsValue && tfIndex<0) {
+				tfIndex=i;
+				unitDIstance = 1-(distance-engineeringUnitsValue)/tfLengths.get(i)
+				break;
+			}
+		}
+		//println "Path.groovy update "+engineeringUnitsValue+" tf index = "+tfIndex+" unit Distance = "+unitDIstance
+		TransformNR location = transforms.get(tfIndex)
+		TransformNR intermediate = unitTFs.get(tfIndex).scale(unitDIstance)
+		return location.times(intermediate)
 	}
 
 	/**
