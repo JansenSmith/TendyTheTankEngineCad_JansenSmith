@@ -1,9 +1,11 @@
 import com.neuronrobotics.bowlerkernel.Bezier3d.*;
 import com.neuronrobotics.bowlerstudio.creature.MobileBaseLoader
+import com.neuronrobotics.bowlerstudio.physics.TransformFactory
 import com.neuronrobotics.sdk.addons.kinematics.AbstractLink
 import com.neuronrobotics.sdk.addons.kinematics.DHParameterKinematics
 import com.neuronrobotics.sdk.addons.kinematics.ILinkListener
 import com.neuronrobotics.sdk.addons.kinematics.MobileBase
+import com.neuronrobotics.sdk.addons.kinematics.math.TransformNR
 import com.neuronrobotics.sdk.common.DeviceManager
 import com.neuronrobotics.sdk.pid.PIDLimitEvent
 
@@ -12,7 +14,7 @@ import eu.mihosoft.vrl.v3d.Transform
 def URL="https://github.com/TechnocopiaPlant/TendyTheTankEngine.git"
 
 
-def numBezierPieces = 20
+def numBezierPieces = 5
 BezierEditor editor = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez.json"),numBezierPieces)
 BezierEditor editor2 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez2.json"),numBezierPieces)
 BezierEditor editor3 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez3.json"),numBezierPieces)
@@ -21,18 +23,20 @@ BezierEditor editor3 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez3.j
 editor.addBezierToTheEnd(editor2)
 editor2.addBezierToTheEnd(editor3)
 
-def transforms=[]
+def y=[]
 
-transforms.addAll(editor.transforms())
-transforms.addAll(editor2.transforms())
-transforms.addAll(editor3.transforms())
+y.addAll(editor.transforms())
+y.addAll(editor2.transforms())
+y.addAll(editor3.transforms())
 
-def unitTFs = [new Transform()]
+def transforms= y.collect{ TransformFactory.csgToNR(it)} 
+
+def unitTFs = []
 
 for(int i=0;i<transforms.size()-1;i++) {
-	Transform start = transforms.get(i)
-	Transform end = transforms.get(i+1)
-	unitTFs.add(start.inverse().apply(end))
+	TransformNR start = transforms.get(i)
+	TransformNR end = transforms.get(i+1)
+	unitTFs.add(start.inverse().times(end))
 }
 
 def tfLengths = unitTFs.collect{
@@ -70,12 +74,11 @@ for(DHParameterKinematics k:base.getAllDHChains() ) {
 		drive=k;
 	}
 }
-drive.setMaxEngineeringUnits(0, total)
+drive.setMaxEngineeringUnits(0, total-1)
 drive.setMinEngineeringUnits(0, 0)
 
 AbstractLink motor = drive.getAbstractLink(0)
-
-motor.addLinkListener(new ILinkListener() {
+ILinkListener ll =new ILinkListener() {
 	
 	/**
 	 * On link position update.
@@ -84,8 +87,24 @@ motor.addLinkListener(new ILinkListener() {
 	 * @param engineeringUnitsValue the engineering units value
 	 */
 	public void onLinkPositionUpdate(AbstractLink source,double engineeringUnitsValue) {
-		println "Path.groovy update "
+		//
 		
+		double distance=0;
+		int tfIndex=-1;
+		double unitDIstance=0;
+		for(int i=0;i<tfLengths.size();i++) {
+			double distStart = distance
+			distance+=tfLengths.get(i)
+			if(distance>engineeringUnitsValue && tfIndex<0) {
+				tfIndex=i;
+				unitDIstance = 1-(distance-engineeringUnitsValue)/tfLengths.get(i)
+				break;
+			}
+		}
+		println "Path.groovy update "+engineeringUnitsValue+" tf index = "+tfIndex+" unit Distance = "+unitDIstance
+		TransformNR location = transforms.get(tfIndex)
+		TransformNR intermediate = unitTFs.get(tfIndex).scale(unitDIstance)
+		drive.setRobotToFiducialTransform(location.times(intermediate))	
 	}
 	
 	/**
@@ -97,7 +116,9 @@ motor.addLinkListener(new ILinkListener() {
 	public void onLinkLimit(AbstractLink source,PIDLimitEvent event) {
 		
 	}
-})
+}
+motor.addLinkListener(ll)
+motor.fireLinkListener(motor.getCurrentEngineeringUnits())
 
 if(drive==null)
 	throw new RuntimeException("Dive secion is missing, can not contine!");
