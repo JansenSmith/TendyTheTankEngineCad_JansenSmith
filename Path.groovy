@@ -1,5 +1,7 @@
-// code here
+import com.neuronrobotics.bowlerkernel.Bezier3d.*;
+
 def URL="https://github.com/TechnocopiaPlant/TendyTheTankEngine.git"
+
 
 def numBezierPieces = 15
 BezierEditor editor = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez.json"),10)
