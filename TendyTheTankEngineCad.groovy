@@ -7,6 +7,7 @@ import eu.mihosoft.vrl.v3d.CSG
 import eu.mihosoft.vrl.v3d.Cube
 import eu.mihosoft.vrl.v3d.Cylinder
 import eu.mihosoft.vrl.v3d.Sphere
+import eu.mihosoft.vrl.v3d.Transform
 import eu.mihosoft.vrl.v3d.parametrics.LengthParameter
 
 // code here
@@ -49,19 +50,22 @@ return new ICadGenerator(){
 		BezierEditor armBez = new BezierEditor(ScriptingEngine.fileFromGit(URL, "armBez.json"),numBezierPieces)
 		armBez.setStart(bucketDiameter.getMM()/2, 0, 0)
 		armBez.setEnd(bayWidth.getMM()/2, armDepth, 0)
-		CSG armRect = new Cube(armWidth, armDepth, boardThickness.getMM()).toCSG()
+		ArrayList<Transform> armTrans = armBez.transforms()
+		CSG armRect = new Cube(armWidth, armDepth, boardThickness.getMM()).toCSG() // rectangle is temporary
 			.movex(bucketDiameter.getMM()/2+armWidth/2)
 			.movey(armDepth/2)
 			.movez(boardThickness.getMM()/2)
 		CSG armShelfPort = armRect
-		CSG armShelfStarboard
+		CSG armShelfStarboard = armShelfPort.mirrorx()
+		
+		plantShelf = plantShelf.union(armShelfPort)
+		plantShelf = plantShelf.union(armShelfStarboard)
 		
 		
 		
 		//CSG portWall
 		//CSG starboardWall = 
 		
-		plantShelf = plantShelf.union(armShelfPort)
 		
 		back.add(plantShelf)
 		
