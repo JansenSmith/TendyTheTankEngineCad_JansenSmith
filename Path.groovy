@@ -45,7 +45,7 @@ println "total length = "+total
 
 MobileBase base=DeviceManager.getSpecificDevice( "TendyTheTankEngine",{
 	MobileBase m = MobileBaseLoader.fromGit(
-		"https://github.com/TechnocopiaPlant/TendyTheTankEngine.gitt",
+		"https://github.com/TechnocopiaPlant/TendyTheTankEngine.git",
 		"TendyTheTankEngine.xml"
 		)
 	return m
