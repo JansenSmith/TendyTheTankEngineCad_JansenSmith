@@ -12,7 +12,7 @@
 <name>TendyTheTankEngine</name>
 <appendage>
 
-<name>TendyTheTankEngine-Limb-1</name>
+<name>DriveCarrage</name>
 	<cadEngine>
 		<git>https://github.com/TechnocopiaPlant/TendyTheTankEngine.git</git>
 		<file>TendyTheTankEngineCad.groovy</file>
@@ -22,7 +22,7 @@
 		<file>TendyTheTankEngineKinematics.groovy</file>
 	</kinematics>
 <link>
-	<name>link1</name>
+	<name>Motor</name>
 	<deviceName>exampleDevice</deviceName>
 	<type>virtual</type>
 	<index>0</index>
