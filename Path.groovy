@@ -1,5 +1,6 @@
 import com.neuronrobotics.bowlerkernel.Bezier3d.*;
 import com.neuronrobotics.bowlerstudio.creature.MobileBaseLoader
+import com.neuronrobotics.sdk.addons.kinematics.DHParameterKinematics
 import com.neuronrobotics.sdk.addons.kinematics.MobileBase
 import com.neuronrobotics.sdk.common.DeviceManager
 
@@ -43,13 +44,38 @@ for(int i=0;i<tfLengths.size();i++) {
 }
 println "total length = "+total
 
-MobileBase base=DeviceManager.getSpecificDevice( "TendyTheTankEngine",{
-	MobileBase m = MobileBaseLoader.fromGit(
-		"https://github.com/TechnocopiaPlant/TendyTheTankEngine.git",
-		"TendyTheTankEngine.xml"
-		)
-	return m
-})
+MobileBase base
+
+if(args!=null)
+	base=args[0]
+else {
+	base=DeviceManager.getSpecificDevice( "TendyTheTankEngine")
+	if(base!=null)
+		base.disconnect()
+	base=DeviceManager.getSpecificDevice( "TendyTheTankEngine",{
+		MobileBase m = MobileBaseLoader.fromGit(
+			"https://github.com/TechnocopiaPlant/TendyTheTankEngine.git",
+			"TendyTheTankEngine.xml"
+			)
+		return m
+	})
+}
+
+DHParameterKinematics drive=null
+for(DHParameterKinematics k:base.getAllDHChains() ) {
+	if(k.getScriptingName().contentEquals("DriveCarrage")) {
+		drive=k;
+	}
+}
+drive.setMaxEngineeringUnits(0, total)
+drive.setMinEngineeringUnits(0, 0)
+
+
+
+if(drive==null)
+	throw new RuntimeException("Dive secion is missing, can not contine!");
+	
+//drive.
 
 return [
 	editor.get(),
