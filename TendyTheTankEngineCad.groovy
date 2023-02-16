@@ -1,3 +1,4 @@
+import com.neuronrobotics.bowlerkernel.Bezier3d.*;
 import com.neuronrobotics.bowlerstudio.creature.ICadGenerator
 import com.neuronrobotics.sdk.addons.kinematics.DHParameterKinematics
 import com.neuronrobotics.sdk.addons.kinematics.MobileBase
@@ -28,8 +29,10 @@ return new ICadGenerator(){
 		ArrayList<CSG> back =[]
 		back.add(new Sphere(1).toCSG())
 		
+		def URL="https://github.com/TechnocopiaPlant/TendyTheTankEngine.git"
+		def numBezierPieces = 5
 		LengthParameter bucketDiameter = new LengthParameter("Bucket Diameter (mm)", 304.8, [0, 1000])
-		LengthParameter boardThickness = new LengthParameter('Board Thickness (mm)', 3, [0, 100])
+		LengthParameter boardThickness = new LengthParameter('Board Thickness (mm)', 19, [0, 100])
 		LengthParameter bayDepth = new LengthParameter("Bay Depth (mm)", 400, [0, 1000])
 		LengthParameter bayWidth = new LengthParameter("Bay Width (mm)", 400, [0, 1000])
 		LengthParameter bayHeight = new LengthParameter("Bay Height (mm)", 1000, [0, 5000])
@@ -38,11 +41,17 @@ return new ICadGenerator(){
 			.movex(bayDepth.getMM()/4)
 			.movez(boardThickness.getMM()/2)
 			.rotz(90)
-		CSG bucketGhost = new Cylinder(bucketDiameter.getMM()/2,boardThickness.getMM(), (int) 100).toCSG()
+		CSG bucketGhost = new Cylinder(bucketDiameter.getMM()/2,boardThickness.getMM(), (int) 40).toCSG()
 		plantShelf = plantShelf.difference(bucketGhost)
 		
+		BezierEditor armBez = new BezierEditor(ScriptingEngine.fileFromGit(URL, "armBez.json"),numBezierPieces)
+
+		//CSG armShelf = 
 		
 		
+		
+		//CSG portWall
+		//CSG starboardWall = 
 		
 		
 		
