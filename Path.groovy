@@ -11,3 +11,10 @@ BezierEditor editor3 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez3.j
 
 editor.addBezierToTheEnd(editor2)
 editor2.addBezierToTheEnd(editor3)
+
+return [
+	editor.get(),
+	editor2.get(),
+	editor3.get()
+	
+]
