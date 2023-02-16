@@ -44,16 +44,24 @@ return new ICadGenerator(){
 		CSG bucketGhost = new Cylinder(bucketDiameter.getMM()/2,boardThickness.getMM(), (int) 40).toCSG()
 		plantShelf = plantShelf.difference(bucketGhost)
 		
+		def armDepth = bayDepth.getMM()/4
+		def armWidth = (bayWidth.getMM()-bucketDiameter.getMM()) / 2
 		BezierEditor armBez = new BezierEditor(ScriptingEngine.fileFromGit(URL, "armBez.json"),numBezierPieces)
-
-		//CSG armShelf = 
+		armBez.setStart(bucketDiameter.getMM()/2, 0, 0)
+		armBez.setEnd(bayWidth.getMM()/2, armDepth, 0)
+		CSG armRect = new Cube(armWidth, armDepth, boardThickness.getMM()).toCSG()
+			.movex(bucketDiameter.getMM()/2+armWidth/2)
+			.movey(armDepth/2)
+			.movez(boardThickness.getMM()/2)
+		CSG armShelfPort = armRect
+		CSG armShelfStarboard
 		
 		
 		
 		//CSG portWall
 		//CSG starboardWall = 
 		
-		
+		plantShelf = plantShelf.union(armShelfPort)
 		
 		back.add(plantShelf)
 		
