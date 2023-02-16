@@ -1,4 +1,6 @@
 import com.neuronrobotics.bowlerkernel.Bezier3d.*;
+import com.neuronrobotics.bowlerstudio.BowlerStudio
+import com.neuronrobotics.bowlerstudio.BowlerStudioController
 import com.neuronrobotics.bowlerstudio.creature.MobileBaseLoader
 import com.neuronrobotics.bowlerstudio.physics.TransformFactory
 import com.neuronrobotics.sdk.addons.kinematics.AbstractLink
@@ -48,7 +50,7 @@ class PathController{
 
 		editor.addBezierToTheEnd(editor2)
 		editor2.addBezierToTheEnd(editor3)
-
+		//editor.setStart(-100, 0, 0)
 		
 
 		y.addAll(editor.transforms())
@@ -57,7 +59,7 @@ class PathController{
 
 		transforms= y.collect{ TransformFactory.csgToNR(it)}
 
-		
+
 
 		for(int i=0;i<transforms.size()-1;i++) {
 			TransformNR start = transforms.get(i)
@@ -70,7 +72,7 @@ class PathController{
 		}
 		//println tfLengths
 
-		
+
 
 		for(int i=0;i<tfLengths.size();i++) {
 			total+=tfLengths.get(i)
@@ -129,11 +131,11 @@ class PathController{
 	public double getTotal() {
 		return total;
 	}
-	
+
 	public Transform CADposeAtLocation(double engineeringUnitsValue) {
 		return TransformFactory.nrToCSG(poseAtLocation(engineeringUnitsValue) )
 	}
-	
+
 	public TransformNR poseAtLocation(double engineeringUnitsValue) {
 		double distance=0;
 		int tfIndex=-1;
@@ -169,6 +171,7 @@ class PathController{
 
 	public void disconnect(){
 		motor.removeLinkListener(ll)
+		get().collect{BowlerStudioController.removeObject(it)}
 		connected = false;
 	}
 	ArrayList<Object> get(){
@@ -186,4 +189,7 @@ def pc = DeviceManager.getSpecificDevice(nameOfCOntroller, {
 	return pc
 })
 
-return [pc.get()]
+pc.get().collect{BowlerStudioController.addObject(it, null)}
+
+
+return null
