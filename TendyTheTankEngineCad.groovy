@@ -31,7 +31,7 @@ return new ICadGenerator(){
 		back.add(new Sphere(1).toCSG())
 		
 		def URL="https://github.com/TechnocopiaPlant/TendyTheTankEngine.git"
-		def numBezierPieces = 5
+		def numBezierPieces = 20
 		LengthParameter bucketDiameter = new LengthParameter("Bucket Diameter (mm)", 304.8, [0, 1000])
 		LengthParameter boardThickness = new LengthParameter('Board Thickness (mm)', 19, [0, 100])
 		LengthParameter bayDepth = new LengthParameter("Bay Depth (mm)", 400, [0, 1000])
@@ -40,6 +40,7 @@ return new ICadGenerator(){
 		
 		CSG plantShelf = new Cube(bayDepth.getMM()/2, bayWidth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayDepth.getMM()/4)
+			.movey(0)
 			.movez(boardThickness.getMM()/2)
 			.rotz(90)
 		CSG bucketGhost = new Cylinder(bucketDiameter.getMM()/2,boardThickness.getMM(), (int) 40).toCSG()
@@ -50,7 +51,10 @@ return new ICadGenerator(){
 		BezierEditor armBez = new BezierEditor(ScriptingEngine.fileFromGit(URL, "armBez.json"),numBezierPieces)
 		armBez.setStart(bucketDiameter.getMM()/2, 0, 0)
 		armBez.setEnd(bayWidth.getMM()/2, armDepth, 0)
+		//armBez.setCP1(bucketDiameter.getMM()/2, armDepth, 0)			Used to reset control point before manually tweaking - JMS, Feb 2023
+		armBez.setCP2(bucketDiameter.getMM()/2, armDepth, 0)
 		ArrayList<Transform> armTrans = armBez.transforms()
+		ArrayList<CSG> armCurve = armBez.getCSG()
 		CSG armRect = new Cube(armWidth, armDepth, boardThickness.getMM()).toCSG() // rectangle is temporary
 			.movex(bucketDiameter.getMM()/2+armWidth/2)
 			.movey(armDepth/2)
@@ -63,11 +67,20 @@ return new ICadGenerator(){
 		
 		
 		
-		//CSG portWall
-		//CSG starboardWall = 
+		CSG portWall = new Cube(boardThickness.getMM(),bayDepth.getMM(),bayHeight.getMM()/2).toCSG()
+			.movex(bayWidth.getMM()/2 + boardThickness.getMM()/2)
+			.movez(bayHeight.getMM()/4)
+		CSG starboardWall = portWall.mirrorx()
 		
+		CSG backWall = new Cube(bayWidth.getMM(), boardThickness.getMM(), bayHeight.getMM()/2).toCSG()
+			.movex(0)
+			.movey(-bayDepth.getMM()/2-boardThickness.getMM()/2)
+			.movez(bayHeight.getMM()/4)
 		
 		back.add(plantShelf)
+		back.add(portWall)
+		back.add(starboardWall)
+		back.add(backWall)
 		
 		
 		for(CSG c:back)
@@ -78,6 +91,8 @@ return new ICadGenerator(){
 			back.add(limbRoot)
 
 		}
+		//back.addAll(armCurve)				Uncomment to show and edit the bezier arm curve - JMS, Feb 2023
+		
 		return back;
 	}
 	
