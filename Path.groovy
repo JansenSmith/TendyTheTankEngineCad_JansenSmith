@@ -26,6 +26,7 @@ class PathController{
 	BezierEditor editor
 	BezierEditor editor2
 	BezierEditor editor3
+	BezierEditor editor4
 	def y=[]
 	def unitTFs = []
 	def transforms
@@ -46,16 +47,21 @@ class PathController{
 		editor = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez.json"),numBezierPieces)
 		editor2 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez2.json"),numBezierPieces)
 		editor3 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez3.json"),numBezierPieces)
+		editor4 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez4.json"),numBezierPieces)
+		editor4.setCP2(0,0,0)
+		editor4.setEnd(0,0,0)
 
 
 		editor.addBezierToTheEnd(editor2)
 		editor2.addBezierToTheEnd(editor3)
+		editor3.addBezierToTheEnd(editor4)
 		//editor.setStart(-100, 0, 0)
 		
 
 		y.addAll(editor.transforms())
 		y.addAll(editor2.transforms())
 		y.addAll(editor3.transforms())
+		y.addAll(editor4.transforms())
 
 		transforms= y.collect{ TransformFactory.csgToNR(it)}
 
@@ -179,6 +185,7 @@ class PathController{
 		back.addAll(editor.get())
 		back.addAll(editor2.get())
 		back.addAll(editor3.get())
+		back.addAll(editor4.get())
 		return back
 	}
 }

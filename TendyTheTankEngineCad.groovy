@@ -37,6 +37,7 @@ return new ICadGenerator(){
 		LengthParameter bayDepth = new LengthParameter("Bay Depth (mm)", 400, [0, 1000])
 		LengthParameter bayWidth = new LengthParameter("Bay Width (mm)", 400, [0, 1000])
 		LengthParameter bayHeight = new LengthParameter("Bay Height (mm)", 1000, [0, 5000])
+		LengthParameter railElevation = new LengthParameter("Rail Elevation (mm)", 200, [0, 1000])
 		
 		CSG plantShelf = new Cube(bayDepth.getMM()/2, bayWidth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayDepth.getMM()/4)
@@ -77,10 +78,13 @@ return new ICadGenerator(){
 			.movey(-bayDepth.getMM()/2-boardThickness.getMM()/2)
 			.movez(bayHeight.getMM()/4)
 		
+		CSG railShelf = plantShelf.movez(railElevation.getMM())
+		
 		back.add(plantShelf)
 		back.add(portWall)
 		back.add(starboardWall)
 		back.add(backWall)
+		back.add(railShelf)
 		
 		
 		for(CSG c:back)
