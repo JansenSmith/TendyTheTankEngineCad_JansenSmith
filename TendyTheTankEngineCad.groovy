@@ -34,10 +34,13 @@ return new ICadGenerator(){
 		def numBezierPieces = 20
 		LengthParameter bucketDiameter = new LengthParameter("Bucket Diameter (mm)", 304.8, [0, 1000])
 		LengthParameter boardThickness = new LengthParameter('Board Thickness (mm)', 19, [0, 100])
+		
 		LengthParameter bayDepth = new LengthParameter("Bay Depth (mm)", 400, [0, 1000])
 		LengthParameter bayWidth = new LengthParameter("Bay Width (mm)", 400, [0, 1000])
 		LengthParameter bayHeight = new LengthParameter("Bay Height (mm)", 1000, [0, 5000])
+		
 		LengthParameter railElevation = new LengthParameter("Rail Elevation (mm)", 200, [0, 1000])
+		LengthParameter trackDistFromWall = new LengthParameter("Track Distance from Wall (mm)", 500, [0, 1000])
 		
 		CSG plantShelf = new Cube(bayDepth.getMM()/2, bayWidth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayDepth.getMM()/4)
@@ -78,13 +81,27 @@ return new ICadGenerator(){
 			.movey(-bayDepth.getMM()/2-boardThickness.getMM()/2)
 			.movez(bayHeight.getMM()/4)
 		
-		CSG railShelf = plantShelf.movez(railElevation.getMM())
+		//CSG railShelf = plantShelf.movez(railElevation.getMM())
+		
+		println("trackDistFromWall: ")
+		println(trackDistFromWall.getMM())
+		CSG portTrack = new Cube(trackDistFromWall.getMM(), bayDepth.getMM(), boardThickness.getMM()).toCSG()
+			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()/2)
+			.movey(0)
+			.movez(railElevation.getMM())
+		CSG starboardTrack = portTrack.mirrorx()
+		CSG backTrack = new Cube(bayWidth.getMM(), trackDistFromWall.getMM(), boardThickness.getMM()).toCSG()
+			.movex(0)
+			.movey(-bayDepth.getMM()/2+trackDistFromWall.getMM()/2)
+			.movez(railElevation.getMM())
+		
+		CSG trackShelf = portTrack.union(starboardTrack).union(backTrack)
 		
 		back.add(plantShelf)
 		back.add(portWall)
 		back.add(starboardWall)
 		back.add(backWall)
-		back.add(railShelf)
+		back.add(trackShelf)
 		
 		
 		for(CSG c:back)

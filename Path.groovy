@@ -48,7 +48,7 @@ class PathController{
 		editor2 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez2.json"),numBezierPieces)
 		editor3 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez3.json"),numBezierPieces)
 		editor4 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez4.json"),numBezierPieces)
-		editor4.setCP2(0,0,0)
+		editor4.setCP2(editor4.cp2Manip.getX(),editor4.cp2Manip.getY(),50)
 		editor4.setEnd(0,0,0)
 
 
