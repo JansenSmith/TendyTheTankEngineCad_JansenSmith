@@ -33,14 +33,20 @@ return new ICadGenerator(){
 		def URL="https://github.com/TechnocopiaPlant/TendyTheTankEngine.git"
 		def numBezierPieces = 20
 		LengthParameter bucketDiameter = new LengthParameter("Bucket Diameter (mm)", 304.8, [0, 1000])
-		LengthParameter boardThickness = new LengthParameter('Board Thickness (mm)', 19, [0, 100])
-		
+		bucketDiameter.setMM(304.8)
+		//LengthParameter boardThickness = new LengthParameter('Board Thickness (mm)', 3, [0, 100])			// laser cut board thicness
+		LengthParameter boardThickness = new LengthParameter('Board Thickness (mm)', 19, [0, 100])			// 4'x8' plywood sheets
+		boardThickness.setMM(19)
 		LengthParameter bayDepth = new LengthParameter("Bay Depth (mm)", 400, [0, 1000])
+		bayDepth.setMM(400)
 		LengthParameter bayWidth = new LengthParameter("Bay Width (mm)", 400, [0, 1000])
+		bayWidth.setMM(400)
 		LengthParameter bayHeight = new LengthParameter("Bay Height (mm)", 1000, [0, 5000])
-		
+		bayHeight.setMM(1000)
 		LengthParameter railElevation = new LengthParameter("Rail Elevation (mm)", 200, [0, 1000])
-		LengthParameter trackDistFromWall = new LengthParameter("Track Distance from Wall (mm)", 500, [0, 1000])
+		railElevation.setMM(200)
+		LengthParameter trackDistFromWall = new LengthParameter("Track Distance from Wall (mm)", 75, [0, 1000])
+		trackDistFromWall.setMM(75)
 		
 		CSG plantShelf = new Cube(bayDepth.getMM()/2, bayWidth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayDepth.getMM()/4)
@@ -83,8 +89,6 @@ return new ICadGenerator(){
 		
 		//CSG railShelf = plantShelf.movez(railElevation.getMM())
 		
-		println("trackDistFromWall: ")
-		println(trackDistFromWall.getMM())
 		CSG portTrack = new Cube(trackDistFromWall.getMM(), bayDepth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()/2)
 			.movey(0)
@@ -94,6 +98,9 @@ return new ICadGenerator(){
 			.movex(0)
 			.movey(-bayDepth.getMM()/2+trackDistFromWall.getMM()/2)
 			.movez(railElevation.getMM())
+		
+		//def turning_radius = 10		// minimum (or just stated) turning radius of the monorail
+		
 		
 		CSG trackShelf = portTrack.union(starboardTrack).union(backTrack)
 		
