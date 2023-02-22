@@ -1,14 +1,10 @@
 import com.neuronrobotics.bowlerkernel.Bezier3d.*;
+
 import com.neuronrobotics.bowlerstudio.creature.ICadGenerator
 import com.neuronrobotics.sdk.addons.kinematics.DHParameterKinematics
 import com.neuronrobotics.sdk.addons.kinematics.MobileBase
 
-import eu.mihosoft.vrl.v3d.CSG
-import eu.mihosoft.vrl.v3d.Cube
-import eu.mihosoft.vrl.v3d.Cylinder
-import eu.mihosoft.vrl.v3d.Sphere
-import eu.mihosoft.vrl.v3d.Transform
-import eu.mihosoft.vrl.v3d.parametrics.LengthParameter
+import eu.mihosoft.vrl.v3d.*
 
 // code here
 
@@ -111,7 +107,6 @@ return new ICadGenerator(){
 		CSG portTrackArc = portTrackSquare.difference(portTrackCircle)
 		CSG starboardTrackArc = portTrackArc.mirrorx()
 		
-		
 		CSG trackShelf = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
 		
 		back.add(plantShelf)
@@ -119,9 +114,6 @@ return new ICadGenerator(){
 		back.add(starboardWall)
 		back.add(backWall)
 		back.add(trackShelf)
-		//back.add(portTrackCircle.movez(1).setColor(javafx.scene.paint.Color.CYAN))
-		//back.add(portTrackSquare.movez(2).setColor(javafx.scene.paint.Color.BLUE))
-		//back.add(portTrackArc.movez(3).setColor(javafx.scene.paint.Color.MAGENTA))
 		
 		
 		for(CSG c:back)
