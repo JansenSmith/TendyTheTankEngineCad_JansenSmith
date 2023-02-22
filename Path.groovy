@@ -38,34 +38,9 @@ class PathController{
 	public String getName() {
 		return name
 	}
-	public boolean connect(){
-		connected=true;
-		def URL="https://github.com/TechnocopiaPlant/TendyTheTankEngine.git"
+	public void setPath(ArrayList<TransformNR> tfs) {
 
-
-
-		editor = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez.json"),numBezierPieces)
-		editor2 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez2.json"),numBezierPieces)
-		editor3 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez3.json"),numBezierPieces)
-		editor4 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez4.json"),numBezierPieces)
-		editor4.setCP2(editor4.cp2Manip.getX(),editor4.cp2Manip.getY(),50)
-		editor4.setEnd(0,0,0)
-
-
-		editor.addBezierToTheEnd(editor2)
-		editor2.addBezierToTheEnd(editor3)
-		editor3.addBezierToTheEnd(editor4)
-		//editor.setStart(-100, 0, 0)
-		
-
-		y.addAll(editor.transforms())
-		y.addAll(editor2.transforms())
-		y.addAll(editor3.transforms())
-		y.addAll(editor4.transforms())
-
-		transforms= y.collect{ TransformFactory.csgToNR(it)}
-
-
+		transforms=tfs
 
 		for(int i=0;i<transforms.size()-1;i++) {
 			TransformNR start = transforms.get(i)
@@ -84,12 +59,40 @@ class PathController{
 			total+=tfLengths.get(i)
 		}
 		println "total length = "+total
+	}
+	public boolean connect(){
+		connected=true;
+		def URL="https://github.com/TechnocopiaPlant/TendyTheTankEngine.git"
+
+
+
+		editor = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez.json"),numBezierPieces)
+		editor2 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez2.json"),numBezierPieces)
+		editor3 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez3.json"),numBezierPieces)
+		editor4 = new BezierEditor(ScriptingEngine.fileFromGit(URL, "bez4.json"),numBezierPieces)
+		editor4.setCP2(editor4.cp2Manip.getX(),editor4.cp2Manip.getY(),50)
+		editor4.setEnd(0,0,0)
+
+
+		editor.addBezierToTheEnd(editor2)
+		editor2.addBezierToTheEnd(editor3)
+		editor3.addBezierToTheEnd(editor4)
+		//editor.setStart(-100, 0, 0)
+
+
+		y.addAll(editor.transforms())
+		y.addAll(editor2.transforms())
+		y.addAll(editor3.transforms())
+		y.addAll(editor4.transforms())
+
+		setPath(y.collect{ TransformFactory.csgToNR(it)})
+
 
 		MobileBase base=DeviceManager.getSpecificDevice( "TendyTheTankEngine",{
 			MobileBase m = MobileBaseLoader.fromGit(
-					"https://github.com/TechnocopiaPlant/TendyTheTankEngine.git",
-					"TendyTheTankEngine.xml"
-					)
+			"https://github.com/TechnocopiaPlant/TendyTheTankEngine.git",
+			"TendyTheTankEngine.xml"
+			)
 			return m
 		})
 
@@ -105,33 +108,33 @@ class PathController{
 		motor = drive.getAbstractLink(0)
 		ll =new ILinkListener() {
 
-					/**
+			/**
 			 * On link position update.
 			 *
 			 * @param source the source
 			 * @param engineeringUnitsValue the engineering units value
 			 */
-					public void onLinkPositionUpdate(AbstractLink source,double engineeringUnitsValue) {
-						//
-						TransformNR loc = poseAtLocation( engineeringUnitsValue)
-						drive.setRobotToFiducialTransform(loc)
+			public void onLinkPositionUpdate(AbstractLink source,double engineeringUnitsValue) {
+				//
+				TransformNR loc = poseAtLocation( engineeringUnitsValue)
+				drive.setRobotToFiducialTransform(loc)
 
-					}
+			}
 
-					/**
+			/**
 			 * On the event of a limit, this is called.
 			 *
 			 * @param source the source
 			 * @param event the event
 			 */
-					public void onLinkLimit(AbstractLink source,PIDLimitEvent event) {
-					}
-				}
+			public void onLinkLimit(AbstractLink source,PIDLimitEvent event) {
+			}
+		}
 		motor.addLinkListener(ll)
 		motor.fireLinkListener(motor.getCurrentEngineeringUnits())
 
 		if(drive==null)
-			throw new RuntimeException("Dive secion is missing, can not contine!");
+		throw new RuntimeException("Dive secion is missing, can not contine!");
 		return isAvailable();
 	}
 	public double getTotal() {
