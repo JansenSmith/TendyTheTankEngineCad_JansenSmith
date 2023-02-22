@@ -5,6 +5,7 @@ import com.neuronrobotics.sdk.addons.kinematics.DHParameterKinematics
 import com.neuronrobotics.sdk.addons.kinematics.MobileBase
 
 import eu.mihosoft.vrl.v3d.*
+import eu.mihosoft.vrl.v3d.parametrics.*
 
 // code here
 
