@@ -99,16 +99,29 @@ return new ICadGenerator(){
 			.movey(-bayDepth.getMM()/2+trackDistFromWall.getMM()/2)
 			.movez(railElevation.getMM())
 		
-		//def turning_radius = 10		// minimum (or just stated) turning radius of the monorail
+		def turning_radius = 50		// minimum (or just stated) turning radius of the monorail
+		CSG portTrackCircle = new Cylinder(turning_radius, boardThickness.getMM(), (int) 16 ).toCSG()
+			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()-turning_radius)
+			.movey(-(bayDepth.getMM()/2-trackDistFromWall.getMM()-turning_radius))
+			.movez(railElevation.getMM()-boardThickness.getMM()/2)
+		CSG portTrackSquare = new Cube(turning_radius, turning_radius, boardThickness.getMM()).toCSG()
+			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()-turning_radius/2)
+			.movey(-(bayDepth.getMM()/2-trackDistFromWall.getMM()-turning_radius/2))
+			.movez(railElevation.getMM())
+		CSG portTrackArc = portTrackSquare.difference(portTrackCircle)
+		CSG starboardTrackArc = portTrackArc.mirrorx()
 		
 		
-		CSG trackShelf = portTrack.union(starboardTrack).union(backTrack)
+		CSG trackShelf = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
 		
 		back.add(plantShelf)
 		back.add(portWall)
 		back.add(starboardWall)
 		back.add(backWall)
 		back.add(trackShelf)
+		//back.add(portTrackCircle.movez(1).setColor(javafx.scene.paint.Color.CYAN))
+		//back.add(portTrackSquare.movez(2).setColor(javafx.scene.paint.Color.BLUE))
+		//back.add(portTrackArc.movez(3).setColor(javafx.scene.paint.Color.MAGENTA))
 		
 		
 		for(CSG c:back)
