@@ -27,7 +27,7 @@ class PathController{
 	BezierEditor editor2
 	BezierEditor editor3
 	BezierEditor editor4
-	def y=[]
+	
 	def unitTFs = []
 	def transforms
 	def tfLengths
@@ -79,7 +79,7 @@ class PathController{
 		editor3.addBezierToTheEnd(editor4)
 		//editor.setStart(-100, 0, 0)
 
-
+		def y=[]
 		y.addAll(editor.transforms())
 		y.addAll(editor2.transforms())
 		y.addAll(editor3.transforms())

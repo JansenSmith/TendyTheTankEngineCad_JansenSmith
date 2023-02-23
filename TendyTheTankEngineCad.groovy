@@ -88,7 +88,7 @@ return new ICadGenerator(){
 		armBez.setCP2(bucketDiameter.getMM()/2-10, armDepth, 0)
 		ArrayList<Transform> armTrans = armBez.transforms()
 		ArrayList<CSG> armCurve = armBez.getCSG()
-		back.addAll(armCurve)
+
 		
 		// Use either the rectangular arms or the bezier guided arms
 		CSG armShelfPort = armRect
@@ -208,13 +208,14 @@ return new ICadGenerator(){
 		
 		for(CSG c:back)
 			c.setManipulator(arg0.getRootListener())
+			
 		for(DHParameterKinematics kin:arg0.getAllDHChains()) {
 			CSG limbRoot =new Cube(1).toCSG()
 			limbRoot.setManipulator(kin.getRootListener())
 			back.add(limbRoot)
 
 		}
-		//back.addAll(armCurve)				Uncomment to show and edit the bezier arm curve - JMS, Feb 2023
+		back.addAll(armCurve)	//			Uncomment to show and edit the bezier arm curve - JMS, Feb 2023
 		
 		return back;
 	}
