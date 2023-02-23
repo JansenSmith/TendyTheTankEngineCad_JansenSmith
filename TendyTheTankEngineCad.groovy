@@ -88,7 +88,7 @@ return new ICadGenerator(){
 		armBez.setCP2(bucketDiameter.getMM()/2, armDepth, 0)
 		ArrayList<Transform> armTrans = armBez.transforms()
 		ArrayList<CSG> armCurve = armBez.getCSG()
-		//back.add(armCurve)
+		back.addAll(armCurve)
 		
 		// Use either the rectangular arms or the bezier guided arms
 		CSG armShelfPort = armRect
