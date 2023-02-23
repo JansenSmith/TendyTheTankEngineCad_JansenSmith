@@ -79,33 +79,7 @@ return new ICadGenerator(){
 		plantShelf = plantShelf.union(armShelfStarboard)
 		
 		CSG boardTemp = plantShelf.rotz(90)
-		def tabTrans = new Transform().movex(-boardTemp.getMinX()).movey(-boardTemp.getMinY()).movez(-boardTemp.getMinZ())
-		boardTemp = boardTemp.transformed(tabTrans)
-		def tabSize = boardTemp.getMaxZ()*2
-		def cycleSize = tabSize*3
-		def minBuffer = boardTemp.getMaxZ()
-		CSG tabTemp = new Cube(tabSize,boardTemp.getMaxZ(),boardTemp.getMaxZ()).toCSG()
-		tabTemp = tabTemp.movex(tabTemp.getMaxX())
-			.movey(-tabTemp.getMaxY()+boardTemp.getMinY())
-			.movez(tabTemp.getMaxZ())
-		def iterNum = (boardTemp.getMaxX() - tabSize - minBuffer*2)/cycleSize // should be the number of full tab-space cycles (so not including the first tab)
-		println "tab cycles = ${iterNum+1}"
-		iterNum = Math.floor(iterNum)
-		def bufferVal = (boardTemp.getMaxX() - (tabSize + cycleSize * iterNum)) / 2 // should be the clearance beyond the outermost tabs, equal on both sides. never more than minBuffer.
-		println "boardTemp.getMaxX() = ${boardTemp.getMaxX()}"
-		println "tabSize+cycleSize*iterNum = ${tabSize+cycleSize*iterNum}"
-		println "minBuffer = ${minBuffer}"
-		println "bufferVal = ${bufferVal}\n"
-		for(int i=0; i<=iterNum; i++) {
-			xVal = bufferVal + i * cycleSize
-			//println "boardTemp.getMaxX() = ${boardTemp.getMaxX()}"
-			//println "tabSize + cycleSize * iterNum = ${tabSize + cycleSize * iterNum}"
-			//println "boardTemp.getMaxX() - (tabSize + cycleSize * iterNum) = ${boardTemp.getMaxX() - (tabSize + cycleSize * iterNum)}"
-			println "i = ${i}; xVal = ${xVal}"
-			boardTemp = boardTemp.union(tabTemp.movex(xVal))
-			//println(boardTemp.getMaxX())
-		}
-		//plantShelf = boardTemp.transformed(tabTrans.inverse())
+		boardTemp = addTabs(boardTemp)
 		//plantShelf = boardTemp.rotz(-90)
 		back.add(boardTemp.setColor(javafx.scene.paint.Color.GREEN))
 		//back.add(tabTemp.setColor(javafx.scene.paint.Color.BLUE))
@@ -148,10 +122,10 @@ return new ICadGenerator(){
 		CSG trackShelf = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
 		
 
-//		back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
-//		back.add(portWall.setColor(javafx.scene.paint.Color.CYAN))
-//		back.add(starboardWall.setColor(javafx.scene.paint.Color.TEAL))
-//		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
+		back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
+		back.add(portWall.setColor(javafx.scene.paint.Color.CYAN))
+		back.add(starboardWall.setColor(javafx.scene.paint.Color.TEAL))
+		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
 //		back.add(trackShelf.setColor(javafx.scene.paint.Color.RED))
 		
 		
@@ -167,6 +141,55 @@ return new ICadGenerator(){
 		
 		return back;
 	}
+
+	
+	/**
+	 * Adds construction tabs along the X axis, on the side that has the most negative Y value (i.e. at the "bottom" of the piece, in the XY plane).
+	 * Assumes Z can be arbitrary but uniform height.
+	 * Assumes the edge having tabs added extends fully between MinX and MaxX.
+	 *
+	 * @param boardTemp the CSG object to add tabs to
+	 * @return the modified CSG object with tabs added
+	 */
+	private CSG addTabs(CSG boardTemp) {
+	    // Translate the boardTemp object so that its minimum corner is at the origin
+	    def tabTrans = new Transform().movex(-boardTemp.getMinX()).movey(-boardTemp.getMinY()).movez(-boardTemp.getMinZ())
+	    boardTemp = boardTemp.transformed(tabTrans)
+	    
+	    // Define the size of the tabs and the distance between tab cycles
+	    def tabSize = boardTemp.getMaxZ() * 2
+	    def cycleSize = tabSize * 3
+	    
+	    // Determine the minimum buffer space between the edge of the board and the tabs
+	    def minBuffer = boardTemp.getMaxZ()
+	    
+	    // Create a temporary CSG object for a single tab
+	    CSG tabTemp = new Cube(tabSize, boardTemp.getMaxZ(), boardTemp.getMaxZ()).toCSG()
+	    
+	    // Position the temporary tab object at the first tab location
+	    tabTemp = tabTemp.movex(tabTemp.getMaxX())
+	                     .movey(-tabTemp.getMaxY() + boardTemp.getMinY())
+	                     .movez(tabTemp.getMaxZ())
+	    
+	    // Calculate the number of full tab-space cycles to add, not including the first tab
+	    def iterNum = (boardTemp.getMaxX() - tabSize - minBuffer*2) / cycleSize
+	    iterNum = Math.floor(iterNum) // Round down to ensure an integer value
+	    
+	    // Calculate the clearance beyond the outermost tabs, equal on both sides and never more than minBuffer
+	    def bufferVal = (boardTemp.getMaxX() - (tabSize + cycleSize * iterNum)) / 2
+	    
+	    // Add the desired number of tabs at regular intervals
+	    for(int i=0; i<=iterNum; i++) {
+	        double xVal = bufferVal + i * cycleSize
+	        boardTemp = boardTemp.union(tabTemp.movex(xVal))
+	    }
+	    
+	    // Translate the boardTemp object back to its original position
+	    boardTemp = boardTemp.transformed(tabTrans.inverse())
+	    
+	    return boardTemp
+	}
+
 	
 	//public CSG addSlots
 	
