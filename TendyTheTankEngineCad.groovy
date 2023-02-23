@@ -36,8 +36,8 @@ return new ICadGenerator(){
 		boardThickness.setMM(19)
 		LengthParameter bayDepth = new LengthParameter("Bay Depth (mm)", 400, [0, 1000])
 		bayDepth.setMM(379.5)
-		//bayDepth.setMM(390)
-		//bayDepth.setMM(400)
+		bayDepth.setMM(390)
+		bayDepth.setMM(400)
 		//bayDepth.setMM(420)
 		//bayDepth.setMM(440)
 		LengthParameter bayWidth = new LengthParameter("Bay Width (mm)", 400, [0, 1000])
@@ -87,19 +87,19 @@ return new ICadGenerator(){
 			.movey(-tabTemp.getMaxY()+boardTemp.getMinY())
 			.movez(tabTemp.getMaxZ())
 		def iterNum = (boardTemp.getMaxX() - tabSize - minBuffer*2)/cycleSize // should be the number of full tab-space cycles (so not including the first tab)
-		println(iterNum+1)
+		println "tab cycles = ${iterNum+1}"
 		iterNum = Math.round(iterNum)
 		def bufferVal = (boardTemp.getMaxX() - (tabSize + cycleSize * iterNum)) / 2 // should be the clearance beyond the outermost tabs, equal on both sides. never more than minBuffer.
-		println(boardTemp.getMaxX())
-		println(tabSize+cycleSize*iterNum)
-		println(minBuffer)
-		println(bufferVal)
-		for(double i=0; i<=iterNum; i++) {
+		println "boardTemp.getMaxX() = ${boardTemp.getMaxX()}"
+		println "tabSize+cycleSize*iterNum = ${tabSize+cycleSize*iterNum}"
+		println "minBuffer = ${minBuffer}"
+		println "bufferVal = ${bufferVal}\n"
+		for(int i=0; i<=iterNum; i++) {
 			xVal = bufferVal + i * cycleSize
-			//println(boardTemp.getMaxX())
-			//println(tabSize + cycleSize * iterNum)
-			//println(boardTemp.getMaxX() - (tabSize + cycleSize * iterNum))
-			println(xVal)
+			//println "boardTemp.getMaxX() = ${boardTemp.getMaxX()}"
+			//println "tabSize + cycleSize * iterNum = ${tabSize + cycleSize * iterNum}"
+			//println "boardTemp.getMaxX() - (tabSize + cycleSize * iterNum) = ${boardTemp.getMaxX() - (tabSize + cycleSize * iterNum)}"
+			println "i = ${i}; xVal = ${xVal}"
 			boardTemp = boardTemp.union(tabTemp.movex(xVal))
 			//println(boardTemp.getMaxX())
 		}
