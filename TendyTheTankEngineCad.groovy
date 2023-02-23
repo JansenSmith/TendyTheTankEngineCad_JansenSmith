@@ -78,24 +78,25 @@ return new ICadGenerator(){
 		plantShelf = plantShelf.union(armShelfPort)
 		plantShelf = plantShelf.union(armShelfStarboard)
 		
-		CSG boardTemp = plantShelf.rotz(90)
-		boardTemp = addTabs(boardTemp)
-		//plantShelf = boardTemp.rotz(-90)
-		back.add(boardTemp.setColor(javafx.scene.paint.Color.GREEN))
-		//back.add(tabTemp.setColor(javafx.scene.paint.Color.BLUE))
+		CSG boardTemp = plantShelf
 		
-		CSG portWall = new Cube(boardThickness.getMM(),bayDepth.getMM(),bayHeight.getMM()/2).toCSG()
-			.movex(bayWidth.getMM()/2 + boardThickness.getMM()/2)
-			.movez(bayHeight.getMM()/4)
-		portWall = portWall.difference(plantShelf)
-		CSG starboardWall = portWall.mirrorx()
+		def boardTrans = new Transform().rotz(90)
+		boardTemp = boardTemp.transformed(boardTrans)
+		plantShelf = plantShelf.transformed(boardTrans).union(addTabs(boardTemp))
 		
-		CSG backWall = new Cube(bayWidth.getMM()+boardThickness.getMM()*2, boardThickness.getMM(), bayHeight.getMM()/2).toCSG()
-			.movex(0)
-			.movey(-bayDepth.getMM()/2-boardThickness.getMM()/2)
-			.movez(bayHeight.getMM()/4)
+		boardTrans = boardTrans.rotz(180)
+		boardTemp = boardTemp.transformed(boardTrans)
+		plantShelf = plantShelf.transformed(boardTrans).union(addTabs(boardTemp))
 		
-		//CSG railShelf = plantShelf.movez(railElevation.getMM())
+		boardTrans = boardTrans.rotz(0)
+		boardTemp = boardTemp.transformed(boardTrans)
+		plantShelf = plantShelf.transformed(boardTrans).union(addTabs(boardTemp))
+		
+		plantShelf = plantShelf.transformed(boardTrans.inverse())
+//		back.add(boardTemp.setColor(javafx.scene.paint.Color.GREEN))
+//		back.add(tabTemp.setColor(javafx.scene.paint.Color.BLUE))
+		
+//		CSG railShelf = plantShelf.movez(railElevation.getMM())
 		
 		CSG portTrack = new Cube(trackDistFromWall.getMM(), bayDepth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()/2)
@@ -121,12 +122,42 @@ return new ICadGenerator(){
 		
 		CSG trackShelf = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
 		
+		boardTemp = trackShelf
+		
+		boardTrans = new Transform().rotz(90)
+		boardTemp = boardTemp.transformed(boardTrans)
+		trackShelf = trackShelf.transformed(boardTrans).union(addTabs(boardTemp))
+		
+		boardTrans = boardTrans.rotz(180)
+		boardTemp = boardTemp.transformed(boardTrans)
+		trackShelf = trackShelf.transformed(boardTrans).union(addTabs(boardTemp))
+		
+		boardTrans = boardTrans.rotz(0)
+		boardTemp = boardTemp.transformed(boardTrans)
+		trackShelf = trackShelf.transformed(boardTrans).union(addTabs(boardTemp))
+		
+		trackShelf = trackShelf.transformed(boardTrans.inverse())
+		
+		CSG portWall = new Cube(boardThickness.getMM(),bayDepth.getMM(),bayHeight.getMM()/2).toCSG()
+			.movex(bayWidth.getMM()/2 + boardThickness.getMM()/2)
+			.movez(bayHeight.getMM()/4)
+		portWall = portWall.difference(plantShelf)
+		portWall = portWall.difference(trackShelf)
+		CSG starboardWall = portWall.mirrorx()
+		
+		CSG backWall = new Cube(bayWidth.getMM()+boardThickness.getMM()*2, boardThickness.getMM(), bayHeight.getMM()/2).toCSG()
+			.movex(0)
+			.movey(-bayDepth.getMM()/2-boardThickness.getMM()/2)
+			.movez(bayHeight.getMM()/4)
+		backWall = backWall.difference(plantShelf)
+		backWall = backWall.difference(trackShelf)
+		
 
 		back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
 		back.add(portWall.setColor(javafx.scene.paint.Color.CYAN))
 		back.add(starboardWall.setColor(javafx.scene.paint.Color.TEAL))
 		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
-//		back.add(trackShelf.setColor(javafx.scene.paint.Color.RED))
+		back.add(trackShelf.setColor(javafx.scene.paint.Color.RED))
 		
 		
 		for(CSG c:back)
@@ -147,6 +178,33 @@ return new ICadGenerator(){
 	 * Adds construction tabs along the X axis, on the side that has the most negative Y value (i.e. at the "bottom" of the piece, in the XY plane).
 	 * Assumes Z can be arbitrary but uniform height.
 	 * Assumes the edge having tabs added extends fully between MinX and MaxX.
+	 * 
+	 * Example usage:
+	 * 	// Copy the target object to a temporary object which never has tabs added, so that the new tabs do not impact MinX and MaxX
+	 *	CSG boardTemp = boardObj
+	 * 	
+	 * 	// Define a transform, which brings the first edge to be tabbed along the X axis, on the side that has the most negative Y value
+	 * 	def boardTrans = new Transform().rotz(90)
+	 * 
+	 * 	// Apply the transform to the temporary object
+	 * 	boardTemp = boardTemp.transformed(boardTrans)
+	 * 
+	 * 	// Apply the same transform to the target object, then add tabs to the target object using the temporary object as input
+	 * 	boardObj = boardObj.transformed(boardTrans).union(addTabs(boardTemp))
+	 * 	
+	 * 	// Modify the existing transform to select a new edge
+	 * 	boardTrans = boardTrans.rotz(180)
+	 * 
+	 * 	// Apply this transform to the temporary object
+	 * 	boardTemp = boardTemp.transformed(boardTrans)
+	 * 
+	 * 	// Apply the same transform to the target object, then add tabs to the target object using the temporary object as input
+	 * 	boardObj = boardObj.transformed(boardTrans).union(addTabs(boardTemp))
+	 * 
+	 * 	// Automatically undo all transformations on the target object
+	 * 	boardObj = boardObj.transformed(boardTrans.inverse())
+	 * 
+	 * 
 	 *
 	 * @param boardTemp the CSG object to add tabs to
 	 * @return the modified CSG object with tabs added
