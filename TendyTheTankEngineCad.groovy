@@ -23,17 +23,18 @@ return new ICadGenerator(){
 
 	@Override
 	public ArrayList<CSG> generateBody(MobileBase arg0) {
-		// TODO Auto-generated method stub
+		// Initialize an empty ArrayList to hold the generated CSG objects
 		ArrayList<CSG> back =[]
-		back.add(new Sphere(1).toCSG())
 		
+		// Define URL link to the GitHub repo for this robot
 		def URL="https://github.com/TechnocopiaPlant/TendyTheTankEngine.git"
-		def numBezierPieces = 20
-		LengthParameter bucketDiameter = new LengthParameter("Bucket Diameter (mm)", 304.8, [0, 1000])
-		bucketDiameter.setMM(304.8)
-		//LengthParameter boardThickness = new LengthParameter('Board Thickness (mm)', 3, [0, 100])			// laser cut board thicness
+		
+		// define the parameters for the flat stock material
+		//LengthParameter boardThickness = new LengthParameter('Board Thickness (mm)', 3, [0, 100])			// laser cut wood thickness
 		LengthParameter boardThickness = new LengthParameter('Board Thickness (mm)', 19, [0, 100])			// 4'x8' plywood sheets
 		boardThickness.setMM(19)
+		
+		// define the parameters for the overall size of the bay itself
 		LengthParameter bayDepth = new LengthParameter("Bay Depth (mm)", 400, [0, 1000])
 		//bayDepth.setMM(379.5)
 		//bayDepth.setMM(390)
@@ -44,12 +45,22 @@ return new ICadGenerator(){
 		bayWidth.setMM(400)
 		LengthParameter bayHeight = new LengthParameter("Bay Height (mm)", 1000, [0, 5000])
 		bayHeight.setMM(1000)
+		
+		// define the parameters for the shelf that holds the plant
+		def armBezierPieces = 20
+		LengthParameter bucketDiameter = new LengthParameter("Bucket Diameter (mm)", 304.8, [0, 1000])
+		bucketDiameter.setMM(304.8)
+		//LengthParameter bucketDistFromWall = new LengthParameter("Bucket Distance From Wall (mm)", 75, [0, 1000])
+		//bucketDistFromWall.setMM(75)
+		
+		// define the parameters for the monorail track shelf
 		LengthParameter railElevation = new LengthParameter("Rail Elevation (mm)", 200, [0, 1000])
 		railElevation.setMM(400)
 		LengthParameter trackDistFromWall = new LengthParameter("Track Distance from Wall (mm)", 25, [0, 1000])
 		trackDistFromWall.setMM(25)
-		//LengthParameter bucketDistFromWall = new LengthParameter("Bucket Distance From Wall (mm)", 75, [0, 1000])
-		//bucketDistFromWall.setMM(75)
+		
+		// define the parameters for the monorail linear gears
+		//
 		
 		CSG plantShelf = new Cube(bayDepth.getMM()/2, bayWidth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayDepth.getMM()/4)
@@ -59,19 +70,27 @@ return new ICadGenerator(){
 		CSG bucketGhost = new Cylinder(bucketDiameter.getMM()/2,boardThickness.getMM(), (int) 40).toCSG()
 		plantShelf = plantShelf.difference(bucketGhost)
 		
+		// Define the port & starboard plantShelf arms, used to guide the bucket into place
 		def armDepth = bayDepth.getMM()/3
 		def armWidth = (bayWidth.getMM()-bucketDiameter.getMM()) / 2
-		BezierEditor armBez = new BezierEditor(ScriptingEngine.fileFromGit(URL, "armBez.json"),numBezierPieces)
+		
+		// Define a possible rectangular arm geometry
+		CSG armRect = new Cube(armWidth, armDepth, boardThickness.getMM()).toCSG() // rectangle is temporary
+			.movex(bucketDiameter.getMM()/2+armWidth/2)
+			.movey(armDepth/2)
+			.movez(boardThickness.getMM()/2)
+			
+		// Define a possible arm geometry along a bezier curve
+		BezierEditor armBez = new BezierEditor(ScriptingEngine.fileFromGit(URL, "armBez.json"),armBezierPieces)
 		armBez.setStart(bucketDiameter.getMM()/2, 0, 0)
 		armBez.setEnd(bayWidth.getMM()/2, armDepth, 0)
 		//armBez.setCP1(bucketDiameter.getMM()/2, armDepth, 0)			Used to reset control point before manually tweaking - JMS, Feb 2023
 		armBez.setCP2(bucketDiameter.getMM()/2, armDepth, 0)
 		ArrayList<Transform> armTrans = armBez.transforms()
 		ArrayList<CSG> armCurve = armBez.getCSG()
-		CSG armRect = new Cube(armWidth, armDepth, boardThickness.getMM()).toCSG() // rectangle is temporary
-			.movex(bucketDiameter.getMM()/2+armWidth/2)
-			.movey(armDepth/2)
-			.movez(boardThickness.getMM()/2)
+		//back.add(armCurve)
+		
+		// Use either the rectangular arms or the bezier guided arms
 		CSG armShelfPort = armRect
 		CSG armShelfStarboard = armShelfPort.mirrorx()
 		
@@ -151,6 +170,33 @@ return new ICadGenerator(){
 			.movez(bayHeight.getMM()/4)
 		backWall = backWall.difference(plantShelf)
 		backWall = backWall.difference(trackShelf)
+		
+		// Adding screw holes to the back wall thru the port & starboard walls
+		//
+		
+		
+//		def pionter = new Cylinder(	20, // Radius at the bottom
+//									  0, // Radius at the top
+//									  40, // Height
+//									  (int)4 //resolution
+//									  ).toCSG()//convert to CSG to display
+//																 
+//		def transform = new Transform()
+//				.rotz( 10) // x,y,z
+//				.movex(20)// X , y, z
+//				 .roty( 45) // x,y,z
+//		def pionterftmoved =  pionter.transformed(   transform)
+//		// is the same as
+//		def piontermoved =  pionter
+//				.rotz( 10) // x,y,z
+//				.movex(20)// X , y, z
+//				 .roty( 45) // x,y,z
+//				.movez(1)// move it up to see that its even there
+//				.setColor(javafx.scene.paint.Color.CYAN);
+//		// return the list of parts
+//		return [pionterftmoved,
+//		piontermoved
+//		]
 		
 
 		back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
