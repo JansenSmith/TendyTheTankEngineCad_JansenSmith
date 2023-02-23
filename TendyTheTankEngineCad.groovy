@@ -84,8 +84,8 @@ return new ICadGenerator(){
 		BezierEditor armBez = new BezierEditor(ScriptingEngine.fileFromGit(URL, "armBez.json"),armBezierPieces)
 		armBez.setStart(bucketDiameter.getMM()/2, 0, 0)
 		armBez.setEnd(bayWidth.getMM()/2, armDepth, 0)
-		armBez.setCP1(bucketDiameter.getMM()/2-10, armDepth, 0)			//Used to reset control point before manually tweaking - JMS, Feb 2023
-		armBez.setCP2(bucketDiameter.getMM()/2, armDepth+10, 0)
+		//armBez.setCP1(bucketDiameter.getMM()/2-10, armDepth, 0)			//Used to reset control point before manually tweaking - JMS, Feb 2023
+		//armBez.setCP2(bucketDiameter.getMM()/2, armDepth+10, 0)
 		ArrayList<Transform> armTrans = armBez.transforms()
 		ArrayList<CSG> armCurve = armBez.getCSG()
 
