@@ -35,8 +35,8 @@ return new ICadGenerator(){
 		LengthParameter boardThickness = new LengthParameter('Board Thickness (mm)', 19, [0, 100])			// 4'x8' plywood sheets
 		boardThickness.setMM(19)
 		LengthParameter bayDepth = new LengthParameter("Bay Depth (mm)", 400, [0, 1000])
-		bayDepth.setMM(379.5)
-		bayDepth.setMM(390)
+		//bayDepth.setMM(379.5)
+		//bayDepth.setMM(390)
 		bayDepth.setMM(400)
 		//bayDepth.setMM(420)
 		//bayDepth.setMM(440)
@@ -46,8 +46,10 @@ return new ICadGenerator(){
 		bayHeight.setMM(1000)
 		LengthParameter railElevation = new LengthParameter("Rail Elevation (mm)", 200, [0, 1000])
 		railElevation.setMM(400)
-		LengthParameter trackDistFromWall = new LengthParameter("Track Distance from Wall (mm)", 75, [0, 1000])
-		trackDistFromWall.setMM(75)
+		LengthParameter trackDistFromWall = new LengthParameter("Track Distance from Wall (mm)", 25, [0, 1000])
+		trackDistFromWall.setMM(25)
+		//LengthParameter bucketDistFromWall = new LengthParameter("Bucket Distance From Wall (mm)", 75, [0, 1000])
+		//bucketDistFromWall.setMM(75)
 		
 		CSG plantShelf = new Cube(bayDepth.getMM()/2, bayWidth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayDepth.getMM()/4)
@@ -57,7 +59,7 @@ return new ICadGenerator(){
 		CSG bucketGhost = new Cylinder(bucketDiameter.getMM()/2,boardThickness.getMM(), (int) 40).toCSG()
 		plantShelf = plantShelf.difference(bucketGhost)
 		
-		def armDepth = bayDepth.getMM()/4
+		def armDepth = bayDepth.getMM()/3
 		def armWidth = (bayWidth.getMM()-bucketDiameter.getMM()) / 2
 		BezierEditor armBez = new BezierEditor(ScriptingEngine.fileFromGit(URL, "armBez.json"),numBezierPieces)
 		armBez.setStart(bucketDiameter.getMM()/2, 0, 0)
@@ -81,14 +83,14 @@ return new ICadGenerator(){
 		boardTemp = boardTemp.transformed(tabTrans)
 		def tabSize = boardTemp.getMaxZ()*2
 		def cycleSize = tabSize*3
-		def minBuffer = tabSize
+		def minBuffer = boardTemp.getMaxZ()
 		CSG tabTemp = new Cube(tabSize,boardTemp.getMaxZ(),boardTemp.getMaxZ()).toCSG()
 		tabTemp = tabTemp.movex(tabTemp.getMaxX())
 			.movey(-tabTemp.getMaxY()+boardTemp.getMinY())
 			.movez(tabTemp.getMaxZ())
 		def iterNum = (boardTemp.getMaxX() - tabSize - minBuffer*2)/cycleSize // should be the number of full tab-space cycles (so not including the first tab)
 		println "tab cycles = ${iterNum+1}"
-		iterNum = Math.round(iterNum)
+		iterNum = Math.floor(iterNum)
 		def bufferVal = (boardTemp.getMaxX() - (tabSize + cycleSize * iterNum)) / 2 // should be the clearance beyond the outermost tabs, equal on both sides. never more than minBuffer.
 		println "boardTemp.getMaxX() = ${boardTemp.getMaxX()}"
 		println "tabSize+cycleSize*iterNum = ${tabSize+cycleSize*iterNum}"
@@ -103,9 +105,9 @@ return new ICadGenerator(){
 			boardTemp = boardTemp.union(tabTemp.movex(xVal))
 			//println(boardTemp.getMaxX())
 		}
-		plantShelf = boardTemp.transformed(tabTrans.inverse())
-		plantShelf = boardTemp.rotz(-90)
-		back.add(boardTemp.setColor(javafx.scene.paint.Color.MAGENTA))
+		//plantShelf = boardTemp.transformed(tabTrans.inverse())
+		//plantShelf = boardTemp.rotz(-90)
+		back.add(boardTemp.setColor(javafx.scene.paint.Color.GREEN))
 		//back.add(tabTemp.setColor(javafx.scene.paint.Color.BLUE))
 		
 		CSG portWall = new Cube(boardThickness.getMM(),bayDepth.getMM(),bayHeight.getMM()/2).toCSG()
@@ -146,11 +148,11 @@ return new ICadGenerator(){
 		CSG trackShelf = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
 		
 
-		//back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
-		//back.add(portWall)
-		//back.add(starboardWall)
-		//back.add(backWall)
-		//back.add(trackShelf)
+//		back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
+//		back.add(portWall.setColor(javafx.scene.paint.Color.CYAN))
+//		back.add(starboardWall.setColor(javafx.scene.paint.Color.TEAL))
+//		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
+//		back.add(trackShelf.setColor(javafx.scene.paint.Color.RED))
 		
 		
 		for(CSG c:back)
