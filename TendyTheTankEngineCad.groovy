@@ -81,17 +81,21 @@ return new ICadGenerator(){
 			.movez(boardThickness.getMM()/2)
 			
 		// Define a possible arm geometry along a bezier curve
-		BezierEditor armBez = new BezierEditor(ScriptingEngine.fileFromGit(URL, "armBez.json"),armBezierPieces)
-		armBez.setStart(bucketDiameter.getMM()/2, 0, 0)
-		armBez.setEnd(bayWidth.getMM()/2, armDepth, 0)
+		BezierEditor armBezierEditor = new BezierEditor(ScriptingEngine.fileFromGit(URL, "armBez.json"),armBezierPieces)
+		armBezierEditor.setStart(bucketDiameter.getMM()/2, 0, 0)
+		armBezierEditor.setEnd(bayWidth.getMM()/2, armDepth, 0)
 		//armBez.setCP1(bucketDiameter.getMM()/2-10, armDepth, 0)			//Used to reset control point before manually tweaking - JMS, Feb 2023
 		//armBez.setCP2(bucketDiameter.getMM()/2, armDepth+10, 0)
-		ArrayList<Transform> armTrans = armBez.transforms()
-		ArrayList<CSG> armCurve = armBez.getCSG()
-
+		ArrayList<Transform> armTrans = armBezierEditor.transforms()
+		ArrayList<CSG> armCurve = armBezierEditor.getCSG()
+		def armPoly = [new Vector3d(armRect.getMaxX(), armRect.getMinY(),0), new Vector3d(armRect.getMinX(),0,0)]
+		for(Transform trans : armTrans) {
+			armPoly.add(new Vector3d(trans.getX(),trans.getY(),trans.getZ()))
+		}
+		CSG armBez = Extrude.points(new Vector3d(0,0,boardThickness.getMM()),armPoly)
 		
 		// Use either the rectangular arms or the bezier guided arms
-		CSG armShelfPort = armRect
+		CSG armShelfPort = armBez
 		CSG armShelfStarboard = armShelfPort.mirrorx()
 		
 		plantShelf = plantShelf.union(armShelfPort)
@@ -198,12 +202,19 @@ return new ICadGenerator(){
 //		piontermoved
 //		]
 		
-
+		// Assign each component an assembly step, for the exploded view visualization
+		plantShelf.addAssemblyStep(1, new Transform())
+		trackShelf.addAssemblyStep(2, new Transform().movez(100))
+		backWall.addAssemblyStep(3, new Transform().movey(-50))
+		portWall.addAssemblyStep(3, new Transform().movex(50))
+		starboardWall.addAssemblyStep(4, new Transform().movex(-50))
+		
+		// Add colored components to returned list, for rendering
 		back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
+		back.add(trackShelf.setColor(javafx.scene.paint.Color.RED))
+		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
 		back.add(portWall.setColor(javafx.scene.paint.Color.CYAN))
 		back.add(starboardWall.setColor(javafx.scene.paint.Color.TEAL))
-		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
-		back.add(trackShelf.setColor(javafx.scene.paint.Color.RED))
 		
 		
 		for(CSG c:back)
@@ -215,7 +226,7 @@ return new ICadGenerator(){
 			back.add(limbRoot)
 
 		}
-		back.addAll(armCurve)	//			Uncomment to show and edit the bezier arm curve - JMS, Feb 2023
+		//back.addAll(armCurve)	//			Uncomment to show and edit the bezier arm curve - JMS, Feb 2023
 		
 		return back;
 	}
