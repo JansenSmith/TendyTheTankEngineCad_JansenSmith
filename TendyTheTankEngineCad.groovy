@@ -47,7 +47,7 @@ return new ICadGenerator(){
 		bayHeight.setMM(1000)
 		
 		// define the parameters for the shelf that holds the plant
-		def armBezierPieces = 20
+		def armBezierPieces = 12
 		LengthParameter bucketDiameter = new LengthParameter("Bucket Diameter (mm)", 304.8, [0, 1000])
 		bucketDiameter.setMM(304.8)
 		//LengthParameter bucketDistFromWall = new LengthParameter("Bucket Distance From Wall (mm)", 75, [0, 1000])
@@ -61,6 +61,12 @@ return new ICadGenerator(){
 		
 		// define the parameters for the monorail linear gears
 		//
+		
+		// define the parameters for the construction screw holes
+		LengthParameter screwDiameter = new LengthParameter("Screw Diameter (mm)", 3, [0, 20])
+		screwDiameter.setMM(3)
+		LengthParameter screwSpacing = new LengthParameter("Screw Diameter (mm)", 150, [0, 400])
+		screwDiameter.setMM(150)
 		
 		CSG plantShelf = new Cube(bayDepth.getMM()/2, bayWidth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayDepth.getMM()/4)
@@ -176,31 +182,19 @@ return new ICadGenerator(){
 		backWall = backWall.difference(trackShelf)
 		
 		// Adding screw holes to the back wall thru the port & starboard walls
-		//
-		
-		
-//		def pionter = new Cylinder(	20, // Radius at the bottom
-//									  0, // Radius at the top
-//									  40, // Height
-//									  (int)4 //resolution
+//		def screwHole_home = new Cylinder(	screwDiameter.getMM()/2, // Radius
+//									  boardThickness.getMM()*2, // Height
+//									  (int)6 //resolution
 //									  ).toCSG()//convert to CSG to display
-//																 
-//		def transform = new Transform()
+//									  .roty(180)
+//		screwHole_home = screwHole_home.movez(-screwHole_home.getMinZ()/2)
+//		def screwTrans = new Transform()
 //				.rotz( 10) // x,y,z
 //				.movex(20)// X , y, z
 //				 .roty( 45) // x,y,z
-//		def pionterftmoved =  pionter.transformed(   transform)
-//		// is the same as
-//		def piontermoved =  pionter
-//				.rotz( 10) // x,y,z
-//				.movex(20)// X , y, z
-//				 .roty( 45) // x,y,z
-//				.movez(1)// move it up to see that its even there
-//				.setColor(javafx.scene.paint.Color.CYAN);
-//		// return the list of parts
-//		return [pionterftmoved,
-//		piontermoved
-//		]
+//		def screwHole_moved =  screwHole.transformed(screwTrans)
+//		back.add(screwHole)
+		
 		
 		// Assign each component an assembly step, for the exploded view visualization
 		plantShelf.addAssemblyStep(1, new Transform())
@@ -226,7 +220,7 @@ return new ICadGenerator(){
 			back.add(limbRoot)
 
 		}
-		//back.addAll(armCurve)	//			Uncomment to show and edit the bezier arm curve - JMS, Feb 2023
+		back.addAll(armCurve)	//			Uncomment to show and edit the bezier arm curve - JMS, Feb 2023
 		
 		return back;
 	}
