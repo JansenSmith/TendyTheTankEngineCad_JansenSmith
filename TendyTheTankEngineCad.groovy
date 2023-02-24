@@ -64,7 +64,8 @@ return new ICadGenerator(){
 		
 		// define the parameters for the construction screw holes
 		LengthParameter screwDiameter = new LengthParameter("Screw Hole Diameter (mm)", 3, [0, 20])
-		screwDiameter.setMM(3)
+		//screwDiameter.setMM(3)														// construction correct
+		screwDiameter.setMM(10)															// temporary, for visualization
 		LengthParameter screwSpacing = new LengthParameter("Distance Between Construction Screws (mm)", 150, [0, 400])
 		screwSpacing.setMM(150)
 		
