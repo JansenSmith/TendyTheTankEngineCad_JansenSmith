@@ -43,8 +43,8 @@ return new ICadGenerator(){
 		//bayDepth.setMM(440)
 		LengthParameter bayWidth = new LengthParameter("Bay Width (mm)", 400, [0, 1000])
 		bayWidth.setMM(400)
-		LengthParameter bayHeight = new LengthParameter("Bay Height (mm)", 1000, [0, 5000])
-		bayHeight.setMM(1000)
+		LengthParameter bayHeight = new LengthParameter("Bay Height (mm)", 1300, [0, 5000])
+		bayHeight.setMM(1400)
 		
 		// define the parameters for the shelf that holds the plant
 		def armBezierPieces = 12
@@ -54,8 +54,8 @@ return new ICadGenerator(){
 		//bucketDistFromWall.setMM(75)
 		
 		// define the parameters for the monorail track shelf
-		LengthParameter railElevation = new LengthParameter("Rail Elevation (mm)", 200, [0, 1000])
-		railElevation.setMM(400)
+		LengthParameter railElevation = new LengthParameter("Rail Elevation (mm)", 600, [0, 1000])
+		railElevation.setMM(600)
 		LengthParameter trackDistFromWall = new LengthParameter("Track Distance from Wall (mm)", 25, [0, 1000])
 		trackDistFromWall.setMM(25)
 		
@@ -63,10 +63,10 @@ return new ICadGenerator(){
 		//
 		
 		// define the parameters for the construction screw holes
-		LengthParameter screwDiameter = new LengthParameter("Screw Diameter (mm)", 3, [0, 20])
+		LengthParameter screwDiameter = new LengthParameter("Screw Hole Diameter (mm)", 3, [0, 20])
 		screwDiameter.setMM(3)
-		LengthParameter screwSpacing = new LengthParameter("Screw Diameter (mm)", 150, [0, 400])
-		screwDiameter.setMM(150)
+		LengthParameter screwSpacing = new LengthParameter("Distance Between Construction Screws (mm)", 150, [0, 400])
+		screwSpacing.setMM(150)
 		
 		CSG plantShelf = new Cube(bayDepth.getMM()/2, bayWidth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayDepth.getMM()/4)
@@ -182,18 +182,42 @@ return new ICadGenerator(){
 		backWall = backWall.difference(trackShelf)
 		
 		// Adding screw holes to the back wall thru the port & starboard walls
-//		def screwHole_home = new Cylinder(	screwDiameter.getMM()/2, // Radius
-//									  boardThickness.getMM()*2, // Height
-//									  (int)6 //resolution
-//									  ).toCSG()//convert to CSG to display
-//									  .roty(180)
-//		screwHole_home = screwHole_home.movez(-screwHole_home.getMinZ()/2)
-//		def screwTrans = new Transform()
-//				.rotz( 10) // x,y,z
-//				.movex(20)// X , y, z
-//				 .roty( 45) // x,y,z
-//		def screwHole_moved =  screwHole.transformed(screwTrans)
-//		back.add(screwHole)
+		CSG screwHole_home = new Cylinder(	screwDiameter.getMM()/2, // Radius
+									  boardThickness.getMM()*2+1, // Height
+									  (int)6 //resolution
+									  ).toCSG()//convert to CSG to display
+									  .roty(180)
+		screwHole_home = screwHole_home.movez(-screwHole_home.getMinZ()/2)
+		Transform screwTrans = new Transform()
+									.rotx(90)
+									.movex(bayWidth.getMM()/2+boardThickness.getMM()/2)
+									.movey(-bayDepth.getMM()/2-boardThickness.getMM())
+									.movez(screwSpacing.getMM()/2)
+		CSG screwHole =  screwHole_home.transformed(screwTrans)
+		CSG screwHoleSet = screwHole
+		for(double alt = screwSpacing.getMM()/2; alt < backWall.getMaxZ(); alt = alt + screwSpacing.getMM()) {
+			screwHole = screwHole.movez(screwSpacing.getMM())
+			screwHoleSet = screwHoleSet.union(screwHole)
+//			println "backWall.getMaxZ() is ${backWall.getMaxZ()}, and alt is ${alt}"
+		}
+		screwHoleSet = screwHoleSet.union(screwHoleSet.mirrorx())
+		backWall = backWall.difference(screwHoleSet)
+		
+		screwTrans = new Transform()
+								.rotx(90)
+								.movex(boardThickness.getMM()*3)
+								.movey(-bayDepth.getMM()/2-boardThickness.getMM())
+								.movez(boardThickness.getMM()/2)
+		screwHole =  screwHole_home.transformed(screwTrans)
+		screwHoleSet = screwHole
+		for(double wid = bayWidth.getMM()/2-boardThickness.getMM(); screwHole.getCenterX() < backWall.getMaxX(); wid = wid + boardThickness.getMM()*6) {
+			screwHoleSet = screwHoleSet.union(screwHole)
+			println "screwHole.getCenterX() is ${screwHole.getCenterX()}"
+			screwHole = screwHole.movex(boardThickness.getMM()*6)
+		}
+		screwHoleSet = screwHoleSet.union(screwHoleSet.mirrorx())
+		back.add(screwHoleSet)
+		//backWall = backWall.difference(screwHoleSet)
 		
 		
 		// Assign each component an assembly step, for the exploded view visualization
@@ -220,7 +244,7 @@ return new ICadGenerator(){
 			back.add(limbRoot)
 
 		}
-		back.addAll(armCurve)	//			Uncomment to show and edit the bezier arm curve - JMS, Feb 2023
+		//back.addAll(armCurve)	//			Uncomment to show and edit the bezier arm curve - JMS, Feb 2023
 		
 		return back;
 	}
