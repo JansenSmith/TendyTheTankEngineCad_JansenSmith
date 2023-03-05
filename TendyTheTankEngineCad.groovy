@@ -417,13 +417,14 @@ return new ICadGenerator(){
 	 * @param boardTemp the CSG object to add tabs to
 	 * @return the modified CSG object with tabs added
 	 */
-	private ArrayList<CSG> addTabs(CSG boardTemp, Vector3d edgeDirection, LengthParameter screwDiameter) {
+	private ArrayList<CSG> addTabs(CSG boardInput, Vector3d edgeDirection, LengthParameter screwHoleDiameter) {
 		
 		ArrayList<CSG> result = []
+		ArrayList<CSG> fasteners = []
 		
 	    // Translate the boardTemp object so that its minimum corner is at the origin
-	    def tabTrans = new Transform().movex(-boardTemp.getMinX()).movey(-boardTemp.getMinY()).movez(-boardTemp.getMinZ())
-	    boardTemp = boardTemp.transformed(tabTrans)
+	    def tabTrans = new Transform().movex(-boardInput.getMinX()).movey(-boardInput.getMinY()).movez(-boardInput.getMinZ())
+	    CSG boardTemp = boardInput.transformed(tabTrans)
 	    
 	    // Define the size of the tabs and the distance between tab cycles
 	    def tabSize = boardTemp.getMaxZ() * 2
@@ -434,6 +435,34 @@ return new ICadGenerator(){
 	    
 	    // Create a temporary CSG object for a single tab
 	    CSG tabTemp = new Cube(tabSize, boardTemp.getMaxZ(), boardTemp.getMaxZ()).toCSG()
+	    
+	    // Position the temporary tab object at the first tab location
+	    tabTemp = tabTemp.movex(tabTemp.getMaxX())
+	                     .movey(-tabTemp.getMaxY() + boardTemp.getMinY())
+	                     .movez(tabTemp.getMaxZ())
+
+		// Create a temporary CSG object for a single fastener hole
+		double holeRadius = screwHoleDiameter.getMM() / 2.0
+		double holeDepth = boardTemp.getMaxZ()
+		Vector3d holeDirection = null
+		if (edgeDirection.equals(Vector3d.X_ONE)) {
+		    holeDirection = Vector3d.Y_ONE;
+		} else if (edgeDirection.equals(Vector3d.Y_ONE)) {
+		    holeDirection = Vector3d.X_ONE;
+		} else if (edgeDirection.equals(Vector3d.Z_ONE)) {
+		    holeDirection = Vector3d.X_ONE;
+		} else if (edgeDirection.equals(Vector3d.X_ONE.negated())) {
+		    holeDirection = Vector3d.X_ONE;
+		} else if (edgeDirection.equals(Vector3d.Y_ONE.negated())) {
+		    holeDirection = Vector3d.X_ONE;
+		} else if (edgeDirection.equals(Vector3d.Z_ONE.negated())) {
+		    holeDirection = Vector3d.X_ONE;
+		} else {
+		    throw new Exception("Invalid edge direction");
+		}
+		if (holeDirection == null) {
+			throw new Exception("Invalid hole direction");
+		}
 	    
 	    // Position the temporary tab object at the first tab location
 	    tabTemp = tabTemp.movex(tabTemp.getMaxX())
@@ -457,6 +486,7 @@ return new ICadGenerator(){
 	    boardTemp = boardTemp.transformed(tabTrans.inverse())
 		
 		result.add(boardTemp)
+		result.addAll(fasteners)
 	    
 	    return result
 	}
