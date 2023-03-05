@@ -232,7 +232,7 @@ return new ICadGenerator(){
 		trackShelf.addAssemblyStep(2, new Transform().movez(100))
 		backWall.addAssemblyStep(3, new Transform().movey(-50))
 		portWall.addAssemblyStep(3, new Transform().movex(50))
-		starboardWall.addAssemblyStep(4, new Transform().movex(-50))
+		starboardWall.addAssemblyStep(3, new Transform().movex(-50))
 		
 		// Add colored components to returned list, for rendering
 		back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
@@ -418,6 +418,9 @@ return new ICadGenerator(){
 	 * @return the modified CSG object with tabs added
 	 */
 	private ArrayList<CSG> addTabs(CSG boardTemp, Vector3d edgeDirection, LengthParameter screwDiameter) {
+		
+		ArrayList<CSG> result = []
+		
 	    // Translate the boardTemp object so that its minimum corner is at the origin
 	    def tabTrans = new Transform().movex(-boardTemp.getMinX()).movey(-boardTemp.getMinY()).movez(-boardTemp.getMinZ())
 	    boardTemp = boardTemp.transformed(tabTrans)
@@ -453,9 +456,9 @@ return new ICadGenerator(){
 	    // Translate the boardTemp object back to its original position
 	    boardTemp = boardTemp.transformed(tabTrans.inverse())
 		
-		ArrayList<CSG> ret = [boardTemp] 
+		result.add(boardTemp)
 	    
-	    return ret
+	    return result
 	}
 
 	
