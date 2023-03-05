@@ -114,17 +114,17 @@ return new ICadGenerator(){
 		CSG plantShelfTemp = plantShelf
 		
 		// Add tabs to the Y- side
-		ArrayList<CSG> returned = addTabs(plantShelfTemp, new Vector3d(0, -1, 0), screwDiameter);
+		ArrayList<CSG> returned = plantShelfTemp.addTabs(new Vector3d(0, -1, 0), screwDiameter);
 		plantShelf = plantShelf.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
 		// Add tabs to the X+ side
-		returned = addTabs(plantShelfTemp, new Vector3d(1, 0, 0), screwDiameter);
+		returned = plantShelfTemp.addTabs(new Vector3d(1, 0, 0), screwDiameter);
 		plantShelf = plantShelf.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
 		// Add tabs to the X- side
-		returned = addTabs(plantShelfTemp, new Vector3d(-1, 0, 0), screwDiameter);
+		returned = plantShelfTemp.addTabs(new Vector3d(-1, 0, 0), screwDiameter);
 		plantShelf = plantShelf.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
@@ -156,17 +156,17 @@ return new ICadGenerator(){
 		CSG trackShelfTemp = trackShelf
 		
 		// Add tabs to the Y- side
-		returned = addTabs(trackShelfTemp, new Vector3d(0, -1, 0), screwDiameter);
+		returned = trackShelfTemp.addTabs(new Vector3d(0, -1, 0), screwDiameter);
 		trackShelf = trackShelf.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
 		// Add tabs to the X+ side
-		returned = addTabs(trackShelfTemp, new Vector3d(1, 0, 0), screwDiameter);
+		returned = trackShelfTemp.addTabs(new Vector3d(1, 0, 0), screwDiameter);
 		trackShelf = trackShelf.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
 		// Add tabs to the X- side
-		returned = addTabs(trackShelfTemp, new Vector3d(-1, 0, 0), screwDiameter);
+		returned = trackShelfTemp.addTabs(new Vector3d(-1, 0, 0), screwDiameter);
 		trackShelf = trackShelf.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
@@ -212,131 +212,5 @@ return new ICadGenerator(){
 		
 		return back;
 	}
-
-	
-	/**
-	 * Adds construction tabs along the X axis, on the side that has the most negative Y value (i.e. at the "bottom" of the piece, in the XY plane).
-	 * Assumes Z can be arbitrary but uniform height.
-	 * Assumes the edge having tabs added extends fully between MinX and MaxX.
-	 * 
-	 * Example usage:
-	 * 	// Copy the target object to a temporary object which never has tabs added, so that the new tabs do not impact MinX and MaxX
-	 *	CSG boardTemp = boardObj
-	 * 	
-	 * 	// Define a transform, which brings the first edge to be tabbed along the X axis, on the side that has the most negative Y value
-	 * 	def boardTrans = new Transform().rotz(90)
-	 * 
-	 * 	// Apply the transform to the temporary object
-	 * 	boardTemp = boardTemp.transformed(boardTrans)
-	 * 
-	 * 	// Apply the same transform to the target object, then add tabs to the target object using the temporary object as input
-	 * 	boardObj = boardObj.transformed(boardTrans).union(addTabs(boardTemp))
-	 * 	
-	 * 	// Modify the existing transform to select a new edge
-	 * 	boardTrans = boardTrans.rotz(180)
-	 * 
-	 * 	// Apply this transform to the temporary object
-	 * 	boardTemp = boardTemp.transformed(boardTrans)
-	 * 
-	 * 	// Apply the same transform to the target object, then add tabs to the target object using the temporary object as input
-	 * 	boardObj = boardObj.transformed(boardTrans).union(addTabs(boardTemp))
-	 * 
-	 * 	// Automatically undo all transformations on the target object
-	 * 	boardObj = boardObj.transformed(boardTrans.inverse())
-	 * 
-	 * 
-	 *
-	 * @param boardTemp the CSG object to add tabs to
-	 * @return the modified CSG object with tabs added
-	 */
-	private ArrayList<CSG> addTabs(CSG boardInput, Vector3d edgeDirection, LengthParameter fastenerHoleDiameter) {
-		
-		ArrayList<CSG> result = []
-		ArrayList<CSG> fasteners = []
-		
-		// Instantiate a new transformation which will capture cumulative transformations being operated on the input board, to be reversed later
-		Transform boardTrans = new Transform()
-		
-		// Determine orientation transformation, based on edgeDirection vector
-		// TODO: instead of JUST edgeDirection, use max values to also try to determine which is the cutting direction
-		if (edgeDirection.equals(Vector3d.X_ONE)) {
-			boardTrans = boardTrans.rotz(90)
-		} else if (edgeDirection.equals(Vector3d.X_ONE.negated())) {
-			boardTrans = boardTrans.rotz(-90)
-		} else if (edgeDirection.equals(Vector3d.Y_ONE)) {
-			boardTrans = boardTrans.rotz(180)
-		} else if (edgeDirection.equals(Vector3d.Y_ONE.negated())) {
-			boardTrans = boardTrans											// original addTabs orientation, so no transformation needed
-		} else if (edgeDirection.equals(Vector3d.Z_ONE)) {
-			throw new Exception("Invalid edge direction: TODO - Implement Z edge directions.");
-		} else if (edgeDirection.equals(Vector3d.Z_ONE.negated())) {
-			throw new Exception("Invalid edge direction: TODO - Implement Z edge directions.");
-		} else {
-			throw new Exception("Invalid edge direction: edgeDirection must be a cartesian unit Vector3d object.");
-		}
-		
-		// Apply orientation transformation
-	    CSG boardTemp = boardInput.transformed(boardTrans)
-		
-	    // Translate the boardTemp object so that its minimum corner is at the origin, adding to cumulative transformation
-	    boardTrans = boardTrans.movex(-boardTemp.getMinX()).movey(-boardTemp.getMinY()).movez(-boardTemp.getMinZ())
-		
-		// Apply new cumulative transformation to the boardInput
-	    boardTemp = boardInput.transformed(boardTrans)
-	    
-	    // Define the size of the tabs and the distance between tab cycles
-	    def tabSize = boardTemp.getMaxZ() * 2
-	    def cycleSize = tabSize * 3
-	    
-	    // Determine the minimum buffer space between the edge of the board and the tabs
-	    def minBuffer = boardTemp.getMaxZ()
-	    
-	    // Create a temporary CSG object for a single tab
-	    CSG tabTemp = new Cube(tabSize, boardTemp.getMaxZ(), boardTemp.getMaxZ()).toCSG()
-	    
-	    // Position the temporary tab object at the first tab location
-	    tabTemp = tabTemp.movex(tabTemp.getMaxX())
-	                     .movey(-tabTemp.getMaxY() + boardTemp.getMinY())
-	                     .movez(tabTemp.getMaxZ())
-
-		// Create a temporary CSG object for a single fastener hole
-		double fastenerHoleRadius = fastenerHoleDiameter.getMM() / 2.0
-		double fastenerHoleDepth = boardTemp.getMaxZ()
-		CSG fastenerHoleTemp = new Cylinder(fastenerHoleRadius, fastenerHoleDepth).toCSG()
-		
-	    // Position the temporary fastener hole object at an initial fastener hole location that does not actually render (analogous to the first tab location, but the first tab is not associated with a fastener)
-		fastenerHoleTemp = fastenerHoleTemp.rotx(-90)
-											.movex(-tabSize)
-											.movey(0)
-											.movez(boardTemp.getMaxZ()/2)
-	    
-	    // Calculate the number of full tab-space cycles to add, not including the first tab (this is also the number of fastener objects to return)
-	    def iterNum = (boardTemp.getMaxX() - tabSize - minBuffer*2) / cycleSize
-	    iterNum = Math.floor(iterNum) // Round down to ensure an integer value
-	    
-	    // Calculate the clearance beyond the outermost tabs, equal on both sides and never more than minBuffer
-	    def bufferVal = (boardTemp.getMaxX() - (tabSize + cycleSize * iterNum)) / 2
-		
-		// Add the first tab, which due to not being paired with a fastener is removed from the loop
-		boardTemp = boardTemp.union(tabTemp.movex(bufferVal))
-	    
-	    // Add the desired number of tabs & fasteners at regular intervals
-	    for(int i=1; i<=iterNum; i++) {
-	        double xVal = bufferVal + i * cycleSize
-	        boardTemp = boardTemp.union(tabTemp.movex(xVal))
-			fasteners.add(fastenerHoleTemp.movex(xVal).transformed(boardTrans.inverse()))
-	    }
-	    
-	    // Translate the boardTemp object back to its original position
-	    boardTemp = boardTemp.transformed(boardTrans.inverse())
-		
-		result.add(boardTemp)
-		result.addAll(fasteners)
-	    
-	    return result
-	}
-	
-	//public CSG addSlots
-	
 	
 }
