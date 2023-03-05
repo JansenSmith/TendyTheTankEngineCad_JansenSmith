@@ -5,6 +5,7 @@ import com.neuronrobotics.sdk.addons.kinematics.DHParameterKinematics
 import com.neuronrobotics.sdk.addons.kinematics.MobileBase
 
 import eu.mihosoft.vrl.v3d.*
+import eu.mihosoft.vrl.v3d.CSG
 import eu.mihosoft.vrl.v3d.parametrics.*
 
 
@@ -177,11 +178,51 @@ return new ICadGenerator(){
 		portWall = portWall.difference(plantShelf).difference(trackShelf).difference(fasteners)
 		starboardWall = starboardWall.difference(plantShelf).difference(trackShelf).difference(fasteners)
 		
+		/*
+		 * 
+		 * 
+		 * 
+		 * 
+		 * large comment block to make diagnostic code easy to find & remove
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 */
+		
+//		// Save plantShelf to a temporary CSG so that addTabs uses the correct edge lengths
+//		CSG wallTemp = portWall.roty(-90)
+//		
+//		// Add tabs to the Y- side
+//		returned = wallTemp.addTabs(new Vector3d(0, -1, 0), screwDiameter);
+//		portWall = portWall.union(returned.get(0));
+//		fasteners.addAll(returned.subList(1, returned.size()));
+		
+		/*
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * large comment block to make diagnostic code easy to find & remove
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 */
+		
 		CSG backWall = new Cube(bayWidth.getMM()+boardThickness.getMM()*2, boardThickness.getMM(), bayHeight.getMM()/2).toCSG()
 			.movex(0)
 			.movey(-bayDepth.getMM()/2-boardThickness.getMM()/2)
 			.movez(bayHeight.getMM()/4)
-		backWall = backWall.difference(plantShelf).difference(trackShelf).difference(fasteners)
+		backWall = backWall.difference(plantShelf).difference(trackShelf).difference(portWall).difference(starboardWall).difference(fasteners)
 		
 		// Assign each component an assembly step, for the exploded view visualization
 		plantShelf.addAssemblyStep(1, new Transform())
