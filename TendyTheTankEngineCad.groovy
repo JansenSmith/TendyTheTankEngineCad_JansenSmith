@@ -90,8 +90,8 @@ return new ICadGenerator(){
 		BezierEditor armBezierEditor = new BezierEditor(ScriptingEngine.fileFromGit(URL, "armBez.json"),armBezierPieces)
 		armBezierEditor.setStart(bucketDiameter.getMM()/2, 0, 0)
 		armBezierEditor.setEnd(bayWidth.getMM()/2, armDepth, 0)
-		//armBez.setCP1(bucketDiameter.getMM()/2-10, armDepth, 0)			//Used to reset control point before manually tweaking - JMS, Feb 2023
-		//armBez.setCP2(bucketDiameter.getMM()/2, armDepth+10, 0)
+		//armBezierEditor.setCP1(bucketDiameter.getMM()/2-10, armDepth, 0)			//Used to reset control point before manually tweaking - JMS, Feb 2023
+		//armBezierEditor.setCP2(bucketDiameter.getMM()/2, armDepth+10, 0)
 		ArrayList<Transform> armTrans = armBezierEditor.transforms()
 		ArrayList<CSG> armCurve = armBezierEditor.getCSG()
 		 List<Vector3d> armPoly = [new Vector3d(armRect.getMaxX(), armRect.getMinY(),0), new Vector3d(armRect.getMinX(),0,0)]
@@ -107,12 +107,26 @@ return new ICadGenerator(){
 		plantShelf = plantShelf.union(armShelfPort)
 		plantShelf = plantShelf.union(armShelfStarboard)
 		
+		// Instantiate a bucket to hold fastener CSG objects in
 		ArrayList<CSG> fasteners = []
-		// 
-		ArrayList<CSG> returned = addTabs(plantShelf, Vector3d.X_ONE, screwDiameter);
-		plantShelf = returned.get(0);
+		
+		// Save plantShelf to a temporary CSG so that addTabs uses the correct edge lengths
+		CSG plantShelfTemp = plantShelf
+		
+		// Add tabs to the Y- side
+		ArrayList<CSG> returned = addTabs(plantShelfTemp, new Vector3d(0, -1, 0), screwDiameter);
+		plantShelf = plantShelf.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
-
+		
+		// Add tabs to the X+ side
+		returned = addTabs(plantShelfTemp, new Vector3d(1, 0, 0), screwDiameter);
+		plantShelf = plantShelf.union(returned.get(0));
+		fasteners.addAll(returned.subList(1, returned.size()));
+		
+		// Add tabs to the X- side
+		returned = addTabs(plantShelfTemp, new Vector3d(-1, 0, 0), screwDiameter);
+		plantShelf = plantShelf.union(returned.get(0));
+		fasteners.addAll(returned.subList(1, returned.size()));
 		
 		
 //		def boardTrans = new Transform().rotz(90)
@@ -130,8 +144,6 @@ return new ICadGenerator(){
 //		plantShelf = plantShelf.transformed(boardTrans.inverse())
 //		back.add(boardTemp.setColor(javafx.scene.paint.Color.GREEN))
 //		back.add(tabTemp.setColor(javafx.scene.paint.Color.BLUE))
-		
-//		CSG railShelf = plantShelf.movez(railElevation.getMM())
 		
 		CSG portTrack = new Cube(trackDistFromWall.getMM(), bayDepth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()/2)
@@ -177,16 +189,15 @@ return new ICadGenerator(){
 		CSG portWall = new Cube(boardThickness.getMM(),bayDepth.getMM(),bayHeight.getMM()/2).toCSG()
 			.movex(bayWidth.getMM()/2 + boardThickness.getMM()/2)
 			.movez(bayHeight.getMM()/4)
-		portWall = portWall.difference(plantShelf)
-		portWall = portWall.difference(trackShelf)
 		CSG starboardWall = portWall.mirrorx()
+		portWall = portWall.difference(plantShelf).difference(trackShelf).difference(fasteners)
+		starboardWall = starboardWall.difference(plantShelf).difference(trackShelf).difference(fasteners)
 		
 		CSG backWall = new Cube(bayWidth.getMM()+boardThickness.getMM()*2, boardThickness.getMM(), bayHeight.getMM()/2).toCSG()
 			.movex(0)
 			.movey(-bayDepth.getMM()/2-boardThickness.getMM()/2)
 			.movez(bayHeight.getMM()/4)
-		backWall = backWall.difference(plantShelf)
-		backWall = backWall.difference(trackShelf)
+		backWall = backWall.difference(plantShelf).difference(trackShelf).difference(fasteners)
 		
 		// Adding screw holes to the back wall thru the port & starboard walls
 //		CSG screwHole_home = new Cylinder(	screwDiameter.getMM()/2, // Radius
@@ -258,130 +269,6 @@ return new ICadGenerator(){
 	}
 
 	
-//	/**
-//	 * Adds construction tabs along the X axis, on the side that has the most negative Y value (i.e. at the "bottom" of the piece, in the XY plane).
-//	 * Assumes Z can be arbitrary but uniform height.
-//	 * Assumes the edge having tabs added extends fully between MinX and MaxX.
-//	 * 
-//	 * Example usage:
-//	 * 	// Copy the target object to a temporary object which never has tabs added, so that the new tabs do not impact MinX and MaxX
-//	 *	CSG boardTemp = boardObj
-//	 * 	
-//	 * 	// Define a transform, which brings the first edge to be tabbed along the X axis, on the side that has the most negative Y value
-//	 * 	def boardTrans = new Transform().rotz(90)
-//	 * 
-//	 * 	// Apply the transform to the temporary object
-//	 * 	boardTemp = boardTemp.transformed(boardTrans)
-//	 * 
-//	 * 	// Apply the same transform to the target object, then add tabs to the target object using the temporary object as input
-//	 * 	boardObj = boardObj.transformed(boardTrans).union(addTabs(boardTemp))
-//	 * 	
-//	 * 	// Modify the existing transform to select a new edge
-//	 * 	boardTrans = boardTrans.rotz(180)
-//	 * 
-//	 * 	// Apply this transform to the temporary object
-//	 * 	boardTemp = boardTemp.transformed(boardTrans)
-//	 * 
-//	 * 	// Apply the same transform to the target object, then add tabs to the target object using the temporary object as input
-//	 * 	boardObj = boardObj.transformed(boardTrans).union(addTabs(boardTemp))
-//	 * 
-//	 * 	// Automatically undo all transformations on the target object
-//	 * 	boardObj = boardObj.transformed(boardTrans.inverse())
-//	 * 
-//	 * 
-//	 *
-//	 * @param boardTemp the CSG object to add tabs to
-//	 * @return the modified CSG object with tabs added
-//	 */
-//	private ArrayList<CSG> addTabs(CSG boardTemp, Vector3d edgeDirection, LengthParameter screwDiameter) {
-//		
-//	    // Translate the boardTemp object so that its minimum corner is at the origin
-//	    def tabTrans = new Transform().toXMin().toYMin().toZMin()
-//	    boardTemp = boardTemp.transformed(tabTrans)
-//	    
-//	    // Define the size of the tabs and the distance between tab cycles
-//	    def tabSize = boardTemp.getMaxZ() * 2
-//	    def cycleSize = tabSize * 3
-//	    
-//	    // Determine the minimum buffer space between the edge of the board and the tabs
-//	    def minBuffer = boardTemp.getMaxZ()
-//	    
-//	    // Create a temporary CSG object for a single tab
-//	    CSG tabTemp = new Cube(tabSize, boardTemp.getMaxZ(), boardTemp.getMaxZ()).toCSG()
-//	    
-//	    // Position the temporary tab object at the first tab location
-//	    tabTemp = tabTemp.movex(tabTemp.getMaxX())
-//	                     .movey(-tabTemp.getMaxY() + boardTemp.getMinY())
-//	                     .movez(tabTemp.getMaxZ())
-//	    
-//	    // Calculate the clearance beyond the outermost tabs, equal on both sides and never more than minBuffer
-//	    def bufferVal = (boardTemp.getMaxX() - (tabSize + cycleSize * iterNum)) / 2
-//	    
-//		ArrayList<CSG> result = new ArrayList<CSG>()
-//		result.add(boardTemp)
-//		
-//		double holeRadius = screwDiameter.getMM() / 2.0
-//		double holeDepth = boardTemp.getMaxZ()
-//		
-//		Vector3d holeDirection = null
-//		
-//		if (edgeDirection.equals(Vector3d.X_ONE)) {
-//		    holeDirection = Vector3d.Y_ONE;
-//		} else if (edgeDirection.equals(Vector3d.Y_ONE)) {
-//		    holeDirection = Vector3d.X_ONE;
-//		} else if (edgeDirection.equals(Vector3d.Z_ONE)) {
-//		    holeDirection = Vector3d.X_ONE;
-//		} else if (edgeDirection.equals(Vector3d.X_ONE.negated())) {
-//		    holeDirection = Vector3d.X_ONE;
-//		} else if (edgeDirection.equals(Vector3d.Y_ONE.negated())) {
-//		    holeDirection = Vector3d.X_ONE;
-//		} else if (edgeDirection.equals(Vector3d.Z_ONE.negated())) {
-//		    holeDirection = Vector3d.X_ONE;
-//		} else {
-//		    throw new Exception("Invalid edge direction");
-//		}
-//
-//		
-//		if (holeDirection != null) {
-//			double holeX = (boardTemp.getMaxX() - holeDepth) / 2.0
-//			double holeY = (boardTemp.getMinY() + boardTemp.getMaxY()) / 2.0
-//			double holeZ = boardTemp.getMinZ()
-//			
-//			Transform holeTrans = new Transform().translate(holeX, holeY, holeZ)
-//			
-//			CSG screwHole = new Cylinder(holeRadius, holeDepth, holeDirection).toCSG().transformed(holeTrans)
-//			
-//			result.add(screwHole)
-//			
-//			int numHoles = (int)Math.floor((boardTemp.getMaxX() - holeDepth) / (screwDiameter.getValue() * 2))
-//			
-//			double spacing = (boardTemp.getMaxX() - holeDepth) / (numHoles + 1)
-//			
-//			for (int i = 1; i <= numHoles; i++) {
-//				double holeXPos = holeX + spacing * i
-//				holeTrans = new Transform().translate(holeXPos, holeY, holeZ)
-//				screwHole = new Cylinder(holeRadius, holeDepth, holeDirection).toCSG().transformed(holeTrans)
-//				result.add(screwHole)
-//			}
-//		}
-//	    
-//	    // Calculate the number of full tab-space cycles to add, not including the first tab
-//	    def iterNum = (boardTemp.getMaxX() - tabSize - minBuffer*2) / cycleSize
-//	    iterNum = Math.floor(iterNum) // Round down to ensure an integer value
-//	    
-//	    // Add the desired number of tabs at regular intervals
-//	    for(int i=0; i<=iterNum; i++) {
-//	        double xVal = bufferVal + i * cycleSize
-//	        boardTemp = boardTemp.union(tabTemp.movex(xVal))
-//	    }
-//	    
-//	    // Translate the boardTemp object back to its original position
-//	    boardTemp = boardTemp.transformed(tabTrans.inverse())
-//		
-//	    return result
-//	}
-
-	
 	/**
 	 * Adds construction tabs along the X axis, on the side that has the most negative Y value (i.e. at the "bottom" of the piece, in the XY plane).
 	 * Assumes Z can be arbitrary but uniform height.
@@ -417,14 +304,39 @@ return new ICadGenerator(){
 	 * @param boardTemp the CSG object to add tabs to
 	 * @return the modified CSG object with tabs added
 	 */
-	private ArrayList<CSG> addTabs(CSG boardInput, Vector3d edgeDirection, LengthParameter screwHoleDiameter) {
+	private ArrayList<CSG> addTabs(CSG boardInput, Vector3d edgeDirection, LengthParameter fastenerHoleDiameter) {
 		
 		ArrayList<CSG> result = []
 		ArrayList<CSG> fasteners = []
 		
-	    // Translate the boardTemp object so that its minimum corner is at the origin
-	    def tabTrans = new Transform().movex(-boardInput.getMinX()).movey(-boardInput.getMinY()).movez(-boardInput.getMinZ())
-	    CSG boardTemp = boardInput.transformed(tabTrans)
+		// Instantiate a new transformation which will capture cumulative transformations being operated on the input board, to be reversed later
+		Transform boardTrans = new Transform()
+		
+		// Determine orientation transformation, based on edgeDirection vector
+		if (edgeDirection.equals(Vector3d.X_ONE)) {
+			boardTrans = boardTrans.rotz(90)
+		} else if (edgeDirection.equals(Vector3d.Y_ONE)) {
+			throw new Exception("Invalid edge direction");
+		} else if (edgeDirection.equals(Vector3d.Z_ONE)) {
+			throw new Exception("Invalid edge direction");
+		} else if (edgeDirection.equals(Vector3d.X_ONE.negated())) {
+			throw new Exception("Invalid edge direction");
+		} else if (edgeDirection.equals(Vector3d.Y_ONE.negated())) {
+			boardTrans = boardTrans											// original addTabs orientation, so no transformation needed
+		} else if (edgeDirection.equals(Vector3d.Z_ONE.negated())) {
+			throw new Exception("Invalid edge direction");
+		} else {
+			throw new Exception("Invalid edge direction");
+		}
+		
+		// Apply orientation transformation
+	    CSG boardTemp = boardInput.transformed(boardTrans)
+		
+	    // Translate the boardTemp object so that its minimum corner is at the origin, adding to cumulative transformation
+	    boardTrans = boardTrans.movex(-boardTemp.getMinX()).movey(-boardTemp.getMinY()).movez(-boardTemp.getMinZ())
+		
+		// Apply new cumulative transformation to the boardInput
+	    boardTemp = boardInput.transformed(boardTrans)
 	    
 	    // Define the size of the tabs and the distance between tab cycles
 	    def tabSize = boardTemp.getMaxZ() * 2
@@ -442,48 +354,38 @@ return new ICadGenerator(){
 	                     .movez(tabTemp.getMaxZ())
 
 		// Create a temporary CSG object for a single fastener hole
-		double holeRadius = screwHoleDiameter.getMM() / 2.0
-		double holeDepth = boardTemp.getMaxZ()
-		Vector3d holeDirection = null
-		if (edgeDirection.equals(Vector3d.X_ONE)) {
-		    holeDirection = Vector3d.Y_ONE;
-		} else if (edgeDirection.equals(Vector3d.Y_ONE)) {
-		    holeDirection = Vector3d.X_ONE;
-		} else if (edgeDirection.equals(Vector3d.Z_ONE)) {
-		    holeDirection = Vector3d.X_ONE;
-		} else if (edgeDirection.equals(Vector3d.X_ONE.negated())) {
-		    holeDirection = Vector3d.X_ONE;
-		} else if (edgeDirection.equals(Vector3d.Y_ONE.negated())) {
-		    holeDirection = Vector3d.X_ONE;
-		} else if (edgeDirection.equals(Vector3d.Z_ONE.negated())) {
-		    holeDirection = Vector3d.X_ONE;
-		} else {
-		    throw new Exception("Invalid edge direction");
-		}
-		if (holeDirection == null) {
-			throw new Exception("Invalid hole direction");
-		}
+		double fastenerHoleRadius = fastenerHoleDiameter.getMM() / 2.0
+		double fastenerHoleDepth = boardTemp.getMaxZ()
+		CSG fastenerHoleTemp = new Cylinder(fastenerHoleRadius, fastenerHoleDepth).toCSG()
+		
+	    // Position the temporary fastener hole object at an initial fastener hole location that does not actually render (analogous to the first tab location, but the first tab is not associated with a fastener)
+		fastenerHoleTemp = fastenerHoleTemp.rotx(-90)
+											.movex(-tabSize)
+											.movey(0)
+											.movez(boardTemp.getMaxZ()/2)
+		
+//		fasteners.add(fastenerHoleTemp.transformed(boardTrans.inverse()))					// purely for diagnostic purposes
 	    
-	    // Position the temporary tab object at the first tab location
-	    tabTemp = tabTemp.movex(tabTemp.getMaxX())
-	                     .movey(-tabTemp.getMaxY() + boardTemp.getMinY())
-	                     .movez(tabTemp.getMaxZ())
 	    
-	    // Calculate the number of full tab-space cycles to add, not including the first tab
+	    // Calculate the number of full tab-space cycles to add, not including the first tab (this is also the number of fastener objects to return)
 	    def iterNum = (boardTemp.getMaxX() - tabSize - minBuffer*2) / cycleSize
 	    iterNum = Math.floor(iterNum) // Round down to ensure an integer value
 	    
 	    // Calculate the clearance beyond the outermost tabs, equal on both sides and never more than minBuffer
 	    def bufferVal = (boardTemp.getMaxX() - (tabSize + cycleSize * iterNum)) / 2
+		
+		// Add the first tab, which due to not being paired with a fastener is removed from the loop
+		boardTemp = boardTemp.union(tabTemp.movex(bufferVal))
 	    
-	    // Add the desired number of tabs at regular intervals
-	    for(int i=0; i<=iterNum; i++) {
+	    // Add the desired number of tabs & fasteners at regular intervals
+	    for(int i=1; i<=iterNum; i++) {
 	        double xVal = bufferVal + i * cycleSize
 	        boardTemp = boardTemp.union(tabTemp.movex(xVal))
+			fasteners.add(fastenerHoleTemp.movex(xVal).transformed(boardTrans.inverse()))
 	    }
 	    
 	    // Translate the boardTemp object back to its original position
-	    boardTemp = boardTemp.transformed(tabTrans.inverse())
+	    boardTemp = boardTemp.transformed(boardTrans.inverse())
 		
 		result.add(boardTemp)
 		result.addAll(fasteners)
@@ -491,6 +393,79 @@ return new ICadGenerator(){
 	    return result
 	}
 
+//	/**
+//	 * Adds construction tabs along the X axis, on the side that has the most negative Y value (i.e. at the "bottom" of the piece, in the XY plane).
+//	 * Assumes Z can be arbitrary but uniform height.
+//	 * Assumes the edge having tabs added extends fully between MinX and MaxX.
+//	 *
+//	 * Example usage:
+//	 * 	// Copy the target object to a temporary object which never has tabs added, so that the new tabs do not impact MinX and MaxX
+//	 *	CSG boardTemp = boardObj
+//	 *
+//	 * 	// Define a transform, which brings the first edge to be tabbed along the X axis, on the side that has the most negative Y value
+//	 * 	def boardTrans = new Transform().rotz(90)
+//	 *
+//	 * 	// Apply the transform to the temporary object
+//	 * 	boardTemp = boardTemp.transformed(boardTrans)
+//	 *
+//	 * 	// Apply the same transform to the target object, then add tabs to the target object using the temporary object as input
+//	 * 	boardObj = boardObj.transformed(boardTrans).union(addTabs(boardTemp))
+//	 *
+//	 * 	// Modify the existing transform to select a new edge
+//	 * 	boardTrans = boardTrans.rotz(180)
+//	 *
+//	 * 	// Apply this transform to the temporary object
+//	 * 	boardTemp = boardTemp.transformed(boardTrans)
+//	 *
+//	 * 	// Apply the same transform to the target object, then add tabs to the target object using the temporary object as input
+//	 * 	boardObj = boardObj.transformed(boardTrans).union(addTabs(boardTemp))
+//	 *
+//	 * 	// Automatically undo all transformations on the target object
+//	 * 	boardObj = boardObj.transformed(boardTrans.inverse())
+//	 *
+//	 *
+//	 *
+//	 * @param boardTemp the CSG object to add tabs to
+//	 * @return the modified CSG object with tabs added
+//	 */
+//	private CSG addTabs(CSG boardTemp) {
+//		// Translate the boardTemp object so that its minimum corner is at the origin
+//		def tabTrans = new Transform().movex(-boardTemp.getMinX()).movey(-boardTemp.getMinY()).movez(-boardTemp.getMinZ())
+//		boardTemp = boardTemp.transformed(tabTrans)
+//		
+//		// Define the size of the tabs and the distance between tab cycles
+//		def tabSize = boardTemp.getMaxZ() * 2
+//		def cycleSize = tabSize * 3
+//		
+//		// Determine the minimum buffer space between the edge of the board and the tabs
+//		def minBuffer = boardTemp.getMaxZ()
+//		
+//		// Create a temporary CSG object for a single tab
+//		CSG tabTemp = new Cube(tabSize, boardTemp.getMaxZ(), boardTemp.getMaxZ()).toCSG()
+//		
+//		// Position the temporary tab object at the first tab location
+//		tabTemp = tabTemp.movex(tabTemp.getMaxX())
+//						 .movey(-tabTemp.getMaxY() + boardTemp.getMinY())
+//						 .movez(tabTemp.getMaxZ())
+//		
+//		// Calculate the number of full tab-space cycles to add, not including the first tab
+//		def iterNum = (boardTemp.getMaxX() - tabSize - minBuffer*2) / cycleSize
+//		iterNum = Math.floor(iterNum) // Round down to ensure an integer value
+//		
+//		// Calculate the clearance beyond the outermost tabs, equal on both sides and never more than minBuffer
+//		def bufferVal = (boardTemp.getMaxX() - (tabSize + cycleSize * iterNum)) / 2
+//		
+//		// Add the desired number of tabs at regular intervals
+//		for(int i=0; i<=iterNum; i++) {
+//			double xVal = bufferVal + i * cycleSize
+//			boardTemp = boardTemp.union(tabTemp.movex(xVal))
+//		}
+//		
+//		// Translate the boardTemp object back to its original position
+//		boardTemp = boardTemp.transformed(tabTrans.inverse())
+//		
+//		return boardTemp
+//	}
 	
 	//public CSG addSlots
 	
