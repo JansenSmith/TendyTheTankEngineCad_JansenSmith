@@ -128,23 +128,6 @@ return new ICadGenerator(){
 		plantShelf = plantShelf.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
-		
-//		def boardTrans = new Transform().rotz(90)
-//		boardTemp = boardTemp.transformed(boardTrans)
-//		plantShelf = plantShelf.transformed(boardTrans).union(addTabs(boardTemp))
-//		
-//		boardTrans = boardTrans.rotz(180)
-//		boardTemp = boardTemp.transformed(boardTrans)
-//		plantShelf = plantShelf.transformed(boardTrans).union(addTabs(boardTemp))
-//		
-//		boardTrans = boardTrans.rotz(0)
-//		boardTemp = boardTemp.transformed(boardTrans)
-//		plantShelf = plantShelf.transformed(boardTrans).union(addTabs(boardTemp))
-		
-//		plantShelf = plantShelf.transformed(boardTrans.inverse())
-//		back.add(boardTemp.setColor(javafx.scene.paint.Color.GREEN))
-//		back.add(tabTemp.setColor(javafx.scene.paint.Color.BLUE))
-		
 		CSG portTrack = new Cube(trackDistFromWall.getMM(), bayDepth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()/2)
 			.movey(0)
@@ -168,23 +151,24 @@ return new ICadGenerator(){
 		CSG starboardTrackArc = portTrackArc.mirrorx()
 		
 		CSG trackShelf = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
-		/*
-//		boardTemp = trackShelf
-//		
-//		boardTrans = new Transform().rotz(90)
-//		boardTemp = boardTemp.transformed(boardTrans)
-//		trackShelf = trackShelf.transformed(boardTrans).union(addTabs(boardTemp))
-//		
-//		boardTrans = boardTrans.rotz(180)
-//		boardTemp = boardTemp.transformed(boardTrans)
-//		trackShelf = trackShelf.transformed(boardTrans).union(addTabs(boardTemp))
-//		
-//		boardTrans = boardTrans.rotz(0)
-//		boardTemp = boardTemp.transformed(boardTrans)
-//		trackShelf = trackShelf.transformed(boardTrans).union(addTabs(boardTemp))
-//		
-//		trackShelf = trackShelf.transformed(boardTrans.inverse())
- * */
+		
+		// Save trackShelf to a temporary CSG so that addTabs uses the correct edge lengths
+		CSG trackShelfTemp = trackShelf
+		
+		// Add tabs to the Y- side
+		returned = addTabs(trackShelfTemp, new Vector3d(0, -1, 0), screwDiameter);
+		trackShelf = trackShelf.union(returned.get(0));
+		fasteners.addAll(returned.subList(1, returned.size()));
+		
+		// Add tabs to the X+ side
+		returned = addTabs(trackShelfTemp, new Vector3d(1, 0, 0), screwDiameter);
+		trackShelf = trackShelf.union(returned.get(0));
+		fasteners.addAll(returned.subList(1, returned.size()));
+		
+		// Add tabs to the X- side
+		returned = addTabs(trackShelfTemp, new Vector3d(-1, 0, 0), screwDiameter);
+		trackShelf = trackShelf.union(returned.get(0));
+		fasteners.addAll(returned.subList(1, returned.size()));
 		
 		CSG portWall = new Cube(boardThickness.getMM(),bayDepth.getMM(),bayHeight.getMM()/2).toCSG()
 			.movex(bayWidth.getMM()/2 + boardThickness.getMM()/2)
@@ -313,20 +297,21 @@ return new ICadGenerator(){
 		Transform boardTrans = new Transform()
 		
 		// Determine orientation transformation, based on edgeDirection vector
+		// TODO: instead of JUST edgeDirection, use max values to also try to determine which is the cutting direction
 		if (edgeDirection.equals(Vector3d.X_ONE)) {
 			boardTrans = boardTrans.rotz(90)
-		} else if (edgeDirection.equals(Vector3d.Y_ONE)) {
-			throw new Exception("Invalid edge direction");
-		} else if (edgeDirection.equals(Vector3d.Z_ONE)) {
-			throw new Exception("Invalid edge direction");
 		} else if (edgeDirection.equals(Vector3d.X_ONE.negated())) {
-			throw new Exception("Invalid edge direction");
+			boardTrans = boardTrans.rotz(-90)
+		} else if (edgeDirection.equals(Vector3d.Y_ONE)) {
+			boardTrans = boardTrans.rotz(180)
 		} else if (edgeDirection.equals(Vector3d.Y_ONE.negated())) {
 			boardTrans = boardTrans											// original addTabs orientation, so no transformation needed
+		} else if (edgeDirection.equals(Vector3d.Z_ONE)) {
+			throw new Exception("Invalid edge direction: TODO - Implement Z edge directions.");
 		} else if (edgeDirection.equals(Vector3d.Z_ONE.negated())) {
-			throw new Exception("Invalid edge direction");
+			throw new Exception("Invalid edge direction: TODO - Implement Z edge directions.");
 		} else {
-			throw new Exception("Invalid edge direction");
+			throw new Exception("Invalid edge direction: edgeDirection must be a cartesian unit Vector3d object.");
 		}
 		
 		// Apply orientation transformation
