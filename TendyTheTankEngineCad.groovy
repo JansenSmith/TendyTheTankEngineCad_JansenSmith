@@ -7,7 +7,6 @@ import com.neuronrobotics.sdk.addons.kinematics.MobileBase
 import eu.mihosoft.vrl.v3d.*
 import eu.mihosoft.vrl.v3d.parametrics.*
 
-// code here
 
 return new ICadGenerator(){
 
@@ -95,7 +94,7 @@ return new ICadGenerator(){
 		//armBez.setCP2(bucketDiameter.getMM()/2, armDepth+10, 0)
 		ArrayList<Transform> armTrans = armBezierEditor.transforms()
 		ArrayList<CSG> armCurve = armBezierEditor.getCSG()
-		def armPoly = [new Vector3d(armRect.getMaxX(), armRect.getMinY(),0), new Vector3d(armRect.getMinX(),0,0)]
+		 List<Vector3d> armPoly = [new Vector3d(armRect.getMaxX(), armRect.getMinY(),0), new Vector3d(armRect.getMinX(),0,0)]
 		for(Transform trans : armTrans) {
 			armPoly.add(new Vector3d(trans.getX(),trans.getY(),trans.getZ()))
 		}
@@ -108,21 +107,27 @@ return new ICadGenerator(){
 		plantShelf = plantShelf.union(armShelfPort)
 		plantShelf = plantShelf.union(armShelfStarboard)
 		
-		CSG boardTemp = plantShelf
+		ArrayList<CSG> fasteners = []
+		// 
+		ArrayList<CSG> returned = addTabs(plantShelf, Vector3d.X_ONE, screwDiameter);
+		plantShelf = returned.get(0);
+		fasteners.addAll(returned.subList(1, returned.size()));
+
 		
-		def boardTrans = new Transform().rotz(90)
-		boardTemp = boardTemp.transformed(boardTrans)
-		plantShelf = plantShelf.transformed(boardTrans).union(addTabs(boardTemp))
 		
-		boardTrans = boardTrans.rotz(180)
-		boardTemp = boardTemp.transformed(boardTrans)
-		plantShelf = plantShelf.transformed(boardTrans).union(addTabs(boardTemp))
+//		def boardTrans = new Transform().rotz(90)
+//		boardTemp = boardTemp.transformed(boardTrans)
+//		plantShelf = plantShelf.transformed(boardTrans).union(addTabs(boardTemp))
+//		
+//		boardTrans = boardTrans.rotz(180)
+//		boardTemp = boardTemp.transformed(boardTrans)
+//		plantShelf = plantShelf.transformed(boardTrans).union(addTabs(boardTemp))
+//		
+//		boardTrans = boardTrans.rotz(0)
+//		boardTemp = boardTemp.transformed(boardTrans)
+//		plantShelf = plantShelf.transformed(boardTrans).union(addTabs(boardTemp))
 		
-		boardTrans = boardTrans.rotz(0)
-		boardTemp = boardTemp.transformed(boardTrans)
-		plantShelf = plantShelf.transformed(boardTrans).union(addTabs(boardTemp))
-		
-		plantShelf = plantShelf.transformed(boardTrans.inverse())
+//		plantShelf = plantShelf.transformed(boardTrans.inverse())
 //		back.add(boardTemp.setColor(javafx.scene.paint.Color.GREEN))
 //		back.add(tabTemp.setColor(javafx.scene.paint.Color.BLUE))
 		
@@ -151,22 +156,23 @@ return new ICadGenerator(){
 		CSG starboardTrackArc = portTrackArc.mirrorx()
 		
 		CSG trackShelf = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
-		
-		boardTemp = trackShelf
-		
-		boardTrans = new Transform().rotz(90)
-		boardTemp = boardTemp.transformed(boardTrans)
-		trackShelf = trackShelf.transformed(boardTrans).union(addTabs(boardTemp))
-		
-		boardTrans = boardTrans.rotz(180)
-		boardTemp = boardTemp.transformed(boardTrans)
-		trackShelf = trackShelf.transformed(boardTrans).union(addTabs(boardTemp))
-		
-		boardTrans = boardTrans.rotz(0)
-		boardTemp = boardTemp.transformed(boardTrans)
-		trackShelf = trackShelf.transformed(boardTrans).union(addTabs(boardTemp))
-		
-		trackShelf = trackShelf.transformed(boardTrans.inverse())
+		/*
+//		boardTemp = trackShelf
+//		
+//		boardTrans = new Transform().rotz(90)
+//		boardTemp = boardTemp.transformed(boardTrans)
+//		trackShelf = trackShelf.transformed(boardTrans).union(addTabs(boardTemp))
+//		
+//		boardTrans = boardTrans.rotz(180)
+//		boardTemp = boardTemp.transformed(boardTrans)
+//		trackShelf = trackShelf.transformed(boardTrans).union(addTabs(boardTemp))
+//		
+//		boardTrans = boardTrans.rotz(0)
+//		boardTemp = boardTemp.transformed(boardTrans)
+//		trackShelf = trackShelf.transformed(boardTrans).union(addTabs(boardTemp))
+//		
+//		trackShelf = trackShelf.transformed(boardTrans.inverse())
+ * */
 		
 		CSG portWall = new Cube(boardThickness.getMM(),bayDepth.getMM(),bayHeight.getMM()/2).toCSG()
 			.movex(bayWidth.getMM()/2 + boardThickness.getMM()/2)
@@ -183,41 +189,41 @@ return new ICadGenerator(){
 		backWall = backWall.difference(trackShelf)
 		
 		// Adding screw holes to the back wall thru the port & starboard walls
-		CSG screwHole_home = new Cylinder(	screwDiameter.getMM()/2, // Radius
-									  boardThickness.getMM()*2+1, // Height
-									  (int)6 //resolution
-									  ).toCSG()//convert to CSG to display
-									  .roty(180)
-		screwHole_home = screwHole_home.movez(-screwHole_home.getMinZ()/2)
-		Transform screwTrans = new Transform()
-									.rotx(90)
-									.movex(bayWidth.getMM()/2+boardThickness.getMM()/2)
-									.movey(-bayDepth.getMM()/2-boardThickness.getMM())
-									.movez(screwSpacing.getMM()/2)
-		CSG screwHole =  screwHole_home.transformed(screwTrans)
-		CSG screwHoleSet = screwHole
-		for(double alt = screwSpacing.getMM()/2; alt < backWall.getMaxZ(); alt = alt + screwSpacing.getMM()) {
-			screwHole = screwHole.movez(screwSpacing.getMM())
-			screwHoleSet = screwHoleSet.union(screwHole)
-//			println "backWall.getMaxZ() is ${backWall.getMaxZ()}, and alt is ${alt}"
-		}
-		screwHoleSet = screwHoleSet.union(screwHoleSet.mirrorx())
-		backWall = backWall.difference(screwHoleSet)
-		
-		screwTrans = new Transform()
-								.rotx(90)
-								.movex(boardThickness.getMM()*3)
-								.movey(-bayDepth.getMM()/2-boardThickness.getMM())
-								.movez(boardThickness.getMM()/2)
-		screwHole =  screwHole_home.transformed(screwTrans)
-		screwHoleSet = screwHole
-		for(double wid = bayWidth.getMM()/2-boardThickness.getMM(); screwHole.getCenterX() < backWall.getMaxX(); wid = wid + boardThickness.getMM()*6) {
-			screwHoleSet = screwHoleSet.union(screwHole)
-			println "screwHole.getCenterX() is ${screwHole.getCenterX()}"
-			screwHole = screwHole.movex(boardThickness.getMM()*6)
-		}
-		screwHoleSet = screwHoleSet.union(screwHoleSet.mirrorx())
-		back.add(screwHoleSet)
+//		CSG screwHole_home = new Cylinder(	screwDiameter.getMM()/2, // Radius
+//									  boardThickness.getMM()*2+1, // Height
+//									  (int)6 //resolution
+//									  ).toCSG()//convert to CSG to display
+//									  .roty(180)
+//		screwHole_home = screwHole_home.movez(-screwHole_home.getMinZ()/2)
+//		Transform screwTrans = new Transform()
+//									.rotx(90)
+//									.movex(bayWidth.getMM()/2+boardThickness.getMM()/2)
+//									.movey(-bayDepth.getMM()/2-boardThickness.getMM())
+//									.movez(screwSpacing.getMM()/2)
+//		CSG screwHole =  screwHole_home.transformed(screwTrans)
+//		CSG screwHoleSet = screwHole
+//		for(double alt = screwSpacing.getMM()/2; alt < backWall.getMaxZ(); alt = alt + screwSpacing.getMM()) {
+//			screwHole = screwHole.movez(screwSpacing.getMM())
+//			screwHoleSet = screwHoleSet.union(screwHole)
+////			println "backWall.getMaxZ() is ${backWall.getMaxZ()}, and alt is ${alt}"
+//		}
+//		screwHoleSet = screwHoleSet.union(screwHoleSet.mirrorx())
+//		backWall = backWall.difference(screwHoleSet)
+//		
+//		screwTrans = new Transform()
+//								.rotx(90)
+//								.movex(boardThickness.getMM()*3)
+//								.movey(-bayDepth.getMM()/2-boardThickness.getMM())
+//								.movez(boardThickness.getMM()/2)
+//		screwHole =  screwHole_home.transformed(screwTrans)
+//		screwHoleSet = screwHole
+//		for(double wid = bayWidth.getMM()/2-boardThickness.getMM(); screwHole.getCenterX() < backWall.getMaxX(); wid = wid + boardThickness.getMM()*6) {
+//			screwHoleSet = screwHoleSet.union(screwHole)
+//			println "screwHole.getCenterX() is ${screwHole.getCenterX()}"
+//			screwHole = screwHole.movex(boardThickness.getMM()*6)
+//		}
+//		screwHoleSet = screwHoleSet.union(screwHoleSet.mirrorx())
+//		back.add(screwHoleSet)
 		//backWall = backWall.difference(screwHoleSet)
 		
 		
@@ -234,6 +240,7 @@ return new ICadGenerator(){
 		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
 		back.add(portWall.setColor(javafx.scene.paint.Color.CYAN))
 		back.add(starboardWall.setColor(javafx.scene.paint.Color.TEAL))
+		back.addAll(fasteners)
 		
 		
 		for(CSG c:back)
@@ -249,6 +256,130 @@ return new ICadGenerator(){
 		
 		return back;
 	}
+
+	
+//	/**
+//	 * Adds construction tabs along the X axis, on the side that has the most negative Y value (i.e. at the "bottom" of the piece, in the XY plane).
+//	 * Assumes Z can be arbitrary but uniform height.
+//	 * Assumes the edge having tabs added extends fully between MinX and MaxX.
+//	 * 
+//	 * Example usage:
+//	 * 	// Copy the target object to a temporary object which never has tabs added, so that the new tabs do not impact MinX and MaxX
+//	 *	CSG boardTemp = boardObj
+//	 * 	
+//	 * 	// Define a transform, which brings the first edge to be tabbed along the X axis, on the side that has the most negative Y value
+//	 * 	def boardTrans = new Transform().rotz(90)
+//	 * 
+//	 * 	// Apply the transform to the temporary object
+//	 * 	boardTemp = boardTemp.transformed(boardTrans)
+//	 * 
+//	 * 	// Apply the same transform to the target object, then add tabs to the target object using the temporary object as input
+//	 * 	boardObj = boardObj.transformed(boardTrans).union(addTabs(boardTemp))
+//	 * 	
+//	 * 	// Modify the existing transform to select a new edge
+//	 * 	boardTrans = boardTrans.rotz(180)
+//	 * 
+//	 * 	// Apply this transform to the temporary object
+//	 * 	boardTemp = boardTemp.transformed(boardTrans)
+//	 * 
+//	 * 	// Apply the same transform to the target object, then add tabs to the target object using the temporary object as input
+//	 * 	boardObj = boardObj.transformed(boardTrans).union(addTabs(boardTemp))
+//	 * 
+//	 * 	// Automatically undo all transformations on the target object
+//	 * 	boardObj = boardObj.transformed(boardTrans.inverse())
+//	 * 
+//	 * 
+//	 *
+//	 * @param boardTemp the CSG object to add tabs to
+//	 * @return the modified CSG object with tabs added
+//	 */
+//	private ArrayList<CSG> addTabs(CSG boardTemp, Vector3d edgeDirection, LengthParameter screwDiameter) {
+//		
+//	    // Translate the boardTemp object so that its minimum corner is at the origin
+//	    def tabTrans = new Transform().toXMin().toYMin().toZMin()
+//	    boardTemp = boardTemp.transformed(tabTrans)
+//	    
+//	    // Define the size of the tabs and the distance between tab cycles
+//	    def tabSize = boardTemp.getMaxZ() * 2
+//	    def cycleSize = tabSize * 3
+//	    
+//	    // Determine the minimum buffer space between the edge of the board and the tabs
+//	    def minBuffer = boardTemp.getMaxZ()
+//	    
+//	    // Create a temporary CSG object for a single tab
+//	    CSG tabTemp = new Cube(tabSize, boardTemp.getMaxZ(), boardTemp.getMaxZ()).toCSG()
+//	    
+//	    // Position the temporary tab object at the first tab location
+//	    tabTemp = tabTemp.movex(tabTemp.getMaxX())
+//	                     .movey(-tabTemp.getMaxY() + boardTemp.getMinY())
+//	                     .movez(tabTemp.getMaxZ())
+//	    
+//	    // Calculate the clearance beyond the outermost tabs, equal on both sides and never more than minBuffer
+//	    def bufferVal = (boardTemp.getMaxX() - (tabSize + cycleSize * iterNum)) / 2
+//	    
+//		ArrayList<CSG> result = new ArrayList<CSG>()
+//		result.add(boardTemp)
+//		
+//		double holeRadius = screwDiameter.getMM() / 2.0
+//		double holeDepth = boardTemp.getMaxZ()
+//		
+//		Vector3d holeDirection = null
+//		
+//		if (edgeDirection.equals(Vector3d.X_ONE)) {
+//		    holeDirection = Vector3d.Y_ONE;
+//		} else if (edgeDirection.equals(Vector3d.Y_ONE)) {
+//		    holeDirection = Vector3d.X_ONE;
+//		} else if (edgeDirection.equals(Vector3d.Z_ONE)) {
+//		    holeDirection = Vector3d.X_ONE;
+//		} else if (edgeDirection.equals(Vector3d.X_ONE.negated())) {
+//		    holeDirection = Vector3d.X_ONE;
+//		} else if (edgeDirection.equals(Vector3d.Y_ONE.negated())) {
+//		    holeDirection = Vector3d.X_ONE;
+//		} else if (edgeDirection.equals(Vector3d.Z_ONE.negated())) {
+//		    holeDirection = Vector3d.X_ONE;
+//		} else {
+//		    throw new Exception("Invalid edge direction");
+//		}
+//
+//		
+//		if (holeDirection != null) {
+//			double holeX = (boardTemp.getMaxX() - holeDepth) / 2.0
+//			double holeY = (boardTemp.getMinY() + boardTemp.getMaxY()) / 2.0
+//			double holeZ = boardTemp.getMinZ()
+//			
+//			Transform holeTrans = new Transform().translate(holeX, holeY, holeZ)
+//			
+//			CSG screwHole = new Cylinder(holeRadius, holeDepth, holeDirection).toCSG().transformed(holeTrans)
+//			
+//			result.add(screwHole)
+//			
+//			int numHoles = (int)Math.floor((boardTemp.getMaxX() - holeDepth) / (screwDiameter.getValue() * 2))
+//			
+//			double spacing = (boardTemp.getMaxX() - holeDepth) / (numHoles + 1)
+//			
+//			for (int i = 1; i <= numHoles; i++) {
+//				double holeXPos = holeX + spacing * i
+//				holeTrans = new Transform().translate(holeXPos, holeY, holeZ)
+//				screwHole = new Cylinder(holeRadius, holeDepth, holeDirection).toCSG().transformed(holeTrans)
+//				result.add(screwHole)
+//			}
+//		}
+//	    
+//	    // Calculate the number of full tab-space cycles to add, not including the first tab
+//	    def iterNum = (boardTemp.getMaxX() - tabSize - minBuffer*2) / cycleSize
+//	    iterNum = Math.floor(iterNum) // Round down to ensure an integer value
+//	    
+//	    // Add the desired number of tabs at regular intervals
+//	    for(int i=0; i<=iterNum; i++) {
+//	        double xVal = bufferVal + i * cycleSize
+//	        boardTemp = boardTemp.union(tabTemp.movex(xVal))
+//	    }
+//	    
+//	    // Translate the boardTemp object back to its original position
+//	    boardTemp = boardTemp.transformed(tabTrans.inverse())
+//		
+//	    return result
+//	}
 
 	
 	/**
@@ -286,7 +417,7 @@ return new ICadGenerator(){
 	 * @param boardTemp the CSG object to add tabs to
 	 * @return the modified CSG object with tabs added
 	 */
-	private CSG addTabs(CSG boardTemp) {
+	private ArrayList<CSG> addTabs(CSG boardTemp, Vector3d edgeDirection, LengthParameter screwDiameter) {
 	    // Translate the boardTemp object so that its minimum corner is at the origin
 	    def tabTrans = new Transform().movex(-boardTemp.getMinX()).movey(-boardTemp.getMinY()).movez(-boardTemp.getMinZ())
 	    boardTemp = boardTemp.transformed(tabTrans)
@@ -321,8 +452,10 @@ return new ICadGenerator(){
 	    
 	    // Translate the boardTemp object back to its original position
 	    boardTemp = boardTemp.transformed(tabTrans.inverse())
+		
+		ArrayList<CSG> ret = [boardTemp] 
 	    
-	    return boardTemp
+	    return ret
 	}
 
 	
