@@ -178,45 +178,21 @@ return new ICadGenerator(){
 		portWall = portWall.difference(plantShelf).difference(trackShelf).difference(fasteners)
 		starboardWall = starboardWall.difference(plantShelf).difference(trackShelf).difference(fasteners)
 		
-		/*
-		 * 
-		 * 
-		 * 
-		 * 
-		 * large comment block to make diagnostic code easy to find & remove
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 */
+		// Save portWall to a temporary CSG so that addTabs uses the correct edge lengths
+		CSG wallTemp = portWall
 		
-//		// Save plantShelf to a temporary CSG so that addTabs uses the correct edge lengths
-//		CSG wallTemp = portWall.roty(-90)
-//		
-//		// Add tabs to the Y- side
-//		returned = wallTemp.addTabs(new Vector3d(0, -1, 0), screwDiameter);
-//		portWall = portWall.union(returned.get(0));
-//		fasteners.addAll(returned.subList(1, returned.size()));
+		// Add tabs to the Y- side
+		returned = wallTemp.addTabs(new Vector3d(0, -1, 0), screwDiameter);
+		portWall = portWall.union(returned.get(0));
+		fasteners.addAll(returned.subList(1, returned.size()));
 		
-		/*
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * large comment block to make diagnostic code easy to find & remove
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 */
+		// Save starboardWall to a temporary CSG so that addTabs uses the correct edge lengths
+		wallTemp = starboardWall
+		
+		// Add tabs to the Y- side
+		returned = wallTemp.addTabs(new Vector3d(0, -1, 0), screwDiameter);
+		starboardWall = starboardWall.union(returned.get(0));
+		fasteners.addAll(returned.subList(1, returned.size()));
 		
 		CSG backWall = new Cube(bayWidth.getMM()+boardThickness.getMM()*2, boardThickness.getMM(), bayHeight.getMM()/2).toCSG()
 			.movex(0)
@@ -236,7 +212,7 @@ return new ICadGenerator(){
 		back.add(trackShelf.setColor(javafx.scene.paint.Color.RED))
 		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
 		back.add(portWall.setColor(javafx.scene.paint.Color.CYAN))
-		back.add(starboardWall.setColor(javafx.scene.paint.Color.TEAL))
+		back.add(starboardWall.setColor(javafx.scene.paint.Color.AQUAMARINE))
 		back.addAll(fasteners)
 		
 		
