@@ -5,6 +5,7 @@ import com.neuronrobotics.sdk.addons.kinematics.DHParameterKinematics
 import com.neuronrobotics.sdk.addons.kinematics.MobileBase
 
 import eu.mihosoft.vrl.v3d.*
+import eu.mihosoft.vrl.v3d.Vector3d
 import eu.mihosoft.vrl.v3d.CSG
 import eu.mihosoft.vrl.v3d.parametrics.*
 
@@ -54,13 +55,16 @@ return new ICadGenerator(){
 		//bucketDistFromWall.setMM(75)
 		
 		// define the parameters for the monorail track shelf
+		def trackStraightBezierPieces = 12
+		def trackCurveBezierPieces = 6
 		LengthParameter railElevation = new LengthParameter("Rail Elevation (mm)", 600, [0, 1000])
 		railElevation.setMM(600)
 		LengthParameter trackDistFromWall = new LengthParameter("Track Distance from Wall (mm)", 25, [0, 1000])
 		trackDistFromWall.setMM(25)
 		
 		// define the parameters for the monorail linear gears
-		//
+		LengthParameter turningRadius = new LengthParameter("Minimum Turning Radius of the Monorail (mm)", 50, [0, 300])
+		turningRadius.setMM(50)
 		
 		// define the parameters for the construction screw holes
 		LengthParameter screwDiameter = new LengthParameter("Screw Hole Diameter (mm)", 3, [0, 20])
@@ -92,10 +96,10 @@ return new ICadGenerator(){
 		armBezierEditor.setStart(bucketDiameter.getMM()/2, 0, 0)
 		armBezierEditor.setEnd(bayWidth.getMM()/2, armDepth, 0)
 		//armBezierEditor.setCP1(bucketDiameter.getMM()/2-10, armDepth, 0)			//Used to reset control point before manually tweaking - JMS, Feb 2023
-		//armBezierEditor.setCP2(bucketDiameter.getMM()/2, armDepth+10, 0)
+		//armBezierEditor.setCP2(bucketDiameter.getMM()/2, armDepth+10, 0)			//Used to reset control point before manually tweaking - JMS, Feb 2023
 		ArrayList<Transform> armTrans = armBezierEditor.transforms()
-		ArrayList<CSG> armCurve = armBezierEditor.getCSG()
-		 List<Vector3d> armPoly = [new Vector3d(armRect.getMaxX(), armRect.getMinY(),0), new Vector3d(armRect.getMinX(),0,0)]
+		ArrayList<CSG> armManips = armBezierEditor.getCSG()
+		List<Vector3d> armPoly = [new Vector3d(armRect.getMaxX(), armRect.getMinY(),0), new Vector3d(armRect.getMinX(),0,0)]
 		for(Transform trans : armTrans) {
 			armPoly.add(new Vector3d(trans.getX(),trans.getY(),trans.getZ()))
 		}
@@ -129,29 +133,65 @@ return new ICadGenerator(){
 		plantShelf = plantShelf.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
+		
+		// Define a shelf for the monorail track using primitives
 		CSG portTrack = new Cube(trackDistFromWall.getMM(), bayDepth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()/2)
 			.movey(0)
-			.movez(railElevation.getMM())
+			.movez(0)
 		CSG starboardTrack = portTrack.mirrorx()
 		CSG backTrack = new Cube(bayWidth.getMM(), trackDistFromWall.getMM(), boardThickness.getMM()).toCSG()
 			.movex(0)
 			.movey(-bayDepth.getMM()/2+trackDistFromWall.getMM()/2)
-			.movez(railElevation.getMM())
-		
-		def turning_radius = 50		// minimum (or just stated) turning radius of the monorail
-		CSG portTrackCircle = new Cylinder(turning_radius, boardThickness.getMM(), (int) 16 ).toCSG()
-			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()-turning_radius)
-			.movey(-(bayDepth.getMM()/2-trackDistFromWall.getMM()-turning_radius))
-			.movez(railElevation.getMM()-boardThickness.getMM()/2)
-		CSG portTrackSquare = new Cube(turning_radius, turning_radius, boardThickness.getMM()).toCSG()
-			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()-turning_radius/2)
-			.movey(-(bayDepth.getMM()/2-trackDistFromWall.getMM()-turning_radius/2))
-			.movez(railElevation.getMM())
+			.movez(0)
+		CSG portTrackCircle = new Cylinder(turningRadius.getMM(), boardThickness.getMM(), (int) 16 ).toCSG()
+			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM())
+			.movey(-(bayDepth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()))
+			.movez(-boardThickness.getMM()/2)
+		CSG portTrackSquare = new Cube(turningRadius.getMM(), turningRadius.getMM(), boardThickness.getMM()).toCSG()
+			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()/2)
+			.movey(-(bayDepth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()/2))
+			.movez(0)
 		CSG portTrackArc = portTrackSquare.difference(portTrackCircle)
 		CSG starboardTrackArc = portTrackArc.mirrorx()
+		CSG trackShelfPrimitives = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
 		
-		CSG trackShelf = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
+		// Define a shelf for the monorail track using a set of bezier curves
+		BezierEditor trackBezierEditorA = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezA.json"),trackStraightBezierPieces)
+		BezierEditor trackBezierEditorB = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezB.json"),trackCurveBezierPieces)
+		BezierEditor trackBezierEditorC = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezC.json"),trackStraightBezierPieces)
+		BezierEditor trackBezierEditorD = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezD.json"),trackCurveBezierPieces)
+		BezierEditor trackBezierEditorE = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezE.json"),trackStraightBezierPieces)
+		
+		//trackBezierEditorA.addBezierToTheEnd(trackBezierEditorB).addBezierToTheEnd(trackBezierEditorC).addBezierToTheEnd(trackBezierEditorD).addBezierToTheEnd(trackBezierEditorE)
+//		trackBezierEditorA.setStart(bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2-5,0)
+//		trackBezierEditorA.setEnd(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), 0)
+//		trackBezierEditorA.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2-55,0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+//		trackBezierEditorA.setCP2(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, 0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		ArrayList<Transform> trackBezTrans = trackBezierEditorA.transforms()
+//		ArrayList<Transform> trackBezTrans = []
+//		trackBezTrans = trackBezTrans.addAll(trackBezierEditorA.transforms())
+//									 .addAll(trackBezierEditorB.transforms())
+//									 .addAll(trackBezierEditorC.transforms())
+//									 .addAll(trackBezierEditorD.transforms())
+//									 .addAll(trackBezierEditorE.transforms())
+		ArrayList<CSG> trackManips = trackBezierEditorA.getCSG()
+		List<Vector3d> trackPoly = [new Vector3d(bayWidth.getMM()/2, -bayDepth.getMM()/2,0),
+									new Vector3d(bayWidth.getMM()/2, bayDepth.getMM()/2,0)]//,
+//									new Vector3d(bayWidth.getMM()/2, -bayDepth.getMM()/2,0),
+//									new Vector3d(bayWidth.getMM()/2, bayDepth.getMM()/2,0)]
+		for(Transform trans : trackBezTrans) {
+			trackPoly.add(new Vector3d(trans.getX(),trans.getY(),trans.getZ()))
+		}
+		CSG trackShelfBez = Extrude.points(new Vector3d(0,0,boardThickness.getMM()),trackPoly)
+		
+		// Select either bezier track shelf or primitives track shelf
+		CSG trackShelf = trackShelfBez
+		def trackTrans = new Transform()
+								.movex(0)
+								.movey(0)
+								.movez(railElevation.getMM())
+//	    trackShelf = trackShelf.transformed(trackTrans)
 		
 		// Save trackShelf to a temporary CSG so that addTabs uses the correct edge lengths
 		CSG trackShelfTemp = trackShelf
@@ -200,6 +240,26 @@ return new ICadGenerator(){
 			.movez(bayHeight.getMM()/4)
 		backWall = backWall.difference(plantShelf).difference(trackShelf).difference(portWall).difference(starboardWall).difference(fasteners)
 		
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		
+		// define two input vectors and circle radius
+		def p1s = new Vector3d(1, 0, 0)
+		def p1e = new Vector3d(1, 2, 0)
+		def p2s = new Vector3d(0, 1, 0)
+		def p2e = new Vector3d(2, 1, 0)
+		def radius = 1
+		
+		// call the function to get the tangent points
+		def points = getTangentPoints(p1s, p1e, p2s, p2e, radius)
+		
+		// print the results
+		println("Tangent point 1: ${points[0]}") // expected output: [1.0, 1.0, 0.0]
+		println("Tangent point 2: ${points[1]}") // expected output: [1.0, 1.0, 0.0]
+		
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		
 		// Assign each component an assembly step, for the exploded view visualization
 		plantShelf.addAssemblyStep(1, new Transform())
 		trackShelf.addAssemblyStep(2, new Transform().movez(100))
@@ -208,12 +268,12 @@ return new ICadGenerator(){
 		starboardWall.addAssemblyStep(3, new Transform().movex(-50))
 		
 		// Add colored components to returned list, for rendering
-		back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
+//		back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
 		back.add(trackShelf.setColor(javafx.scene.paint.Color.RED))
-		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
-		back.add(portWall.setColor(javafx.scene.paint.Color.CYAN))
-		back.add(starboardWall.setColor(javafx.scene.paint.Color.AQUAMARINE))
-		back.addAll(fasteners)
+//		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
+//		back.add(portWall.setColor(javafx.scene.paint.Color.CYAN))
+//		back.add(starboardWall.setColor(javafx.scene.paint.Color.AQUAMARINE))
+//		back.addAll(fasteners)
 		
 		
 		for(CSG c:back)
@@ -225,9 +285,46 @@ return new ICadGenerator(){
 			back.add(limbRoot)
 
 		}
-		//back.addAll(armCurve)	//			Uncomment to show and edit the bezier arm curve - JMS, Feb 2023
+//		back.addAll(armManips)	//			Uncomment to show and edit the bezier arm manipulators - JMS, Feb 2023
+		back.addAll(trackManips)	//			Uncomment to show and edit the bezier track manipulators - JMS, Mar 2023
 		
 		return back;
+	}
+	
+	def getTangentPoints(Vector3d p1s, Vector3d p1e, Vector3d p2s, Vector3d p2e, double radius) {
+	    // create two Vector3d objects representing the input vectors
+	    def v1 = p1e.minus(p1s)
+	    def v2 = p2e.minus(p2s)
+	
+	    // calculate the vector between the starting points of the input vectors
+	    def p = p2s.minus(p1s)
+	
+	    // calculate the dot product and cross product of the input vectors
+	    def dot = v1.dot(v2)
+	    def cross = v1.cross(v2)
+	
+	    // calculate the coefficients for the quadratic equation
+	    def a = v1.lengthSquared() - dot*dot/v2.lengthSquared()
+	    def b = 2*p.dot(v1) - 2*dot/v2.lengthSquared()*p.dot(v2)
+	    def c = p.lengthSquared() - dot*dot/v2.lengthSquared() - radius*radius
+	
+	    // solve the quadratic equation
+	    def discriminant = b*b - 4*a*c
+	    if (discriminant < 0) {
+	        // no real solutions, return null
+	        println("No real solutions")
+	        return null
+	    } else {
+	        def t1 = (-b - Math.sqrt(discriminant)) / (2*a)
+	        def t2 = (-b + Math.sqrt(discriminant)) / (2*a)
+	
+	        // calculate the two points of intersection
+	        def q1 = p1s.plus(v1.times(t1))
+	        def q2 = p1s.plus(v1.times(t2))
+	
+	        // return the two points
+	        return [q1, q2]
+	    }
 	}
 	
 }
