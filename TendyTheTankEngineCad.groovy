@@ -172,9 +172,8 @@ return new ICadGenerator(){
 		
 		// Hardcode control points for a single bezier curve
 		trackBezierEditorA.setStart(portForwardTrackPoint)
-		trackBezierEditorA.setCP1(portForwardTrackPoint)
-//			bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2-55,0)															//Used to reset control point before manually tweaking - JMS, Mar 2023
-		trackBezierEditorA.setCP2(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, 0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorA.setCP1(portForwardTrackPoint.x,portForwardTrackPoint.y-50,portForwardTrackPoint.z)
+		trackBezierEditorA.setCP2(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, 0)
 		trackBezierEditorA.setEnd(portBackTrackPoint)
 		
 		// Append another bezier curve
@@ -182,8 +181,8 @@ return new ICadGenerator(){
 		
 		// Hardcode control points for a single bezier curve
 		trackBezierEditorB.setStart(portBackTrackPoint)
-		trackBezierEditorB.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
-		trackBezierEditorB.setCP2(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorB.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
+		trackBezierEditorB.setCP2(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
 		trackBezierEditorB.setEnd(backPortTrackPoint)
 		
 		// Append another bezier curve
@@ -191,8 +190,8 @@ return new ICadGenerator(){
 		
 		// Hardcode control points for a single bezier curve
 		trackBezierEditorC.setStart(backPortTrackPoint)
-		trackBezierEditorC.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
-		trackBezierEditorC.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorC.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
+		trackBezierEditorC.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
 		trackBezierEditorC.setEnd(backStarboardTrackPoint)
 		
 		// Append another bezier curve
@@ -200,8 +199,8 @@ return new ICadGenerator(){
 		
 		// Hardcode control points for a single bezier curve
 		trackBezierEditorD.setStart(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
-		trackBezierEditorD.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
-		trackBezierEditorD.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorD.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
+		trackBezierEditorD.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
 		trackBezierEditorD.setEnd(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
 		
 		// Append another bezier curve
@@ -209,8 +208,8 @@ return new ICadGenerator(){
 		
 		// Hardcode control points for a single bezier curve
 		trackBezierEditorE.setStart(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
-		trackBezierEditorE.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
-		trackBezierEditorE.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorE.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
+		trackBezierEditorE.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
 		trackBezierEditorE.setEnd(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
 		
 		// Add all the bezier point-wise transformations to a list, to generate a polygon later for extrusion
