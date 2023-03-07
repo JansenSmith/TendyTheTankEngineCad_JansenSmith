@@ -9,6 +9,7 @@ import eu.mihosoft.vrl.v3d.*
 import eu.mihosoft.vrl.v3d.Vector3d
 import eu.mihosoft.vrl.v3d.CSG
 import eu.mihosoft.vrl.v3d.parametrics.*
+import marytts.signalproc.sinusoidal.TrackModifier
 
 
 return new ICadGenerator(){
@@ -134,7 +135,6 @@ return new ICadGenerator(){
 		plantShelf = plantShelf.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
-		
 		// Define a shelf for the monorail track using primitives
 		CSG portTrack = new Cube(trackDistFromWall.getMM(), bayDepth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()/2)
@@ -165,12 +165,12 @@ return new ICadGenerator(){
 		BezierEditor trackBezierEditorE = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezE.json"),trackStraightBezierPieces)
 		
 		// Specify each of the start-end points that define the track's bezier curve
-		Vector3d portForwardTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2, (double) 0)
-		Vector3d portBackTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), (double) 0)
-		Vector3d backPortTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
-		Vector3d backStarboardTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
-		Vector3d starboardBackTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), (double) 0)
-		Vector3d starboardFrontTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM(), bayDepth.getMM()/2, (double) 0)
+		Vector3d portForwardTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2, 0)
+		Vector3d portBackTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), 0)
+		Vector3d backPortTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
+		Vector3d backStarboardTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
+		Vector3d starboardBackTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), 0)
+		Vector3d starboardFrontTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM(), bayDepth.getMM()/2, 0)
 		
 		// TODO: should really specify the control points of the rounded corner beziers to explicitly take into account the turningRadius and generate a true arc
 
@@ -299,19 +299,25 @@ return new ICadGenerator(){
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		
-		// define two input vectors and circle radius
-		def p1s = new Vector3d(1, 0, 0)
-		def p1e = new Vector3d(1, 2, 0)
-		def p2s = new Vector3d(0, 1, 0)
-		def p2e = new Vector3d(2, 1, 0)
+//		// define two input vectors and circle radius
+//		def p1s = portForwardTrackPoint
+//		def p1e = portBackTrackPoint
+//		def p2s = backStarboardTrackPoint
+//		def p2e = backPortTrackPoint
+//		def radius = turningRadius.getMM()
+		
+		def p1s = new Vector3d(5, 0, 0)
+		def p1e = new Vector3d(5, 5, 0)
+		def p2s = new Vector3d(0, 5, 0)
+		def p2e = new Vector3d(5, 5, 0)
 		def radius = 1
 		
 		// call the function to get the tangent points
 		def points = getTangentPoints(p1s, p1e, p2s, p2e, radius)
 		
 		// print the results
-		println("Tangent point 1: ${points[0]}") // expected output: [1.0, 1.0, 0.0]
-		println("Tangent point 2: ${points[1]}") // expected output: [1.0, 1.0, 0.0]
+		println("Tangent point 1: ${points[0]}") // expected output: [5, 4, 0]
+		println("Tangent point 2: ${points[1]}") // expected output: [4, 5, 0]
 		
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -339,48 +345,43 @@ return new ICadGenerator(){
 			CSG limbRoot =new Cube(1).toCSG()
 			limbRoot.setManipulator(kin.getRootListener())
 			back.add(limbRoot)
-
 		}
-//		back.addAll(armManips)	//			Uncomment to show and edit the bezier arm manipulators - JMS, Feb 2023
+//		back.addAll(armManips)		//			Uncomment to show and edit the bezier arm manipulators - JMS, Feb 2023
 //		back.addAll(trackManips)	//			Uncomment to show and edit the bezier track manipulators - JMS, Mar 2023
 		
 		return back;
 	}
 	
 	def getTangentPoints(Vector3d p1s, Vector3d p1e, Vector3d p2s, Vector3d p2e, double radius) {
-	    // create two Vector3d objects representing the input vectors
-	    def v1 = p1e.minus(p1s)
-	    def v2 = p2e.minus(p2s)
+	    // Calculate the direction vectors of the two lines
+	    def v1 = p1e.minus(p1s).normalized()
+	    def v2 = p2e.minus(p2s).normalized()
 	
-	    // calculate the vector between the starting points of the input vectors
-	    def p = p2s.minus(p1s)
+	    // Calculate the perpendicular vectors to the two lines
+	    def n1 = new Vector3d(-v1.y, v1.x, 0)
+	    def n2 = new Vector3d(-v2.y, v2.x, 0)
 	
-	    // calculate the dot product and cross product of the input vectors
-	    def dot = v1.dot(v2)
-	    def cross = v1.cross(v2)
+	    // Calculate the intersection point of the two lines
+	    def d = p2s.minus(p1s)
+	    def t = d.cross(n2).z / n1.cross(n2).z
+	    def intersection = p1s.plus(v1.times(t))
 	
-	    // calculate the coefficients for the quadratic equation
-	    def a = v1.lengthSquared() - dot*dot/v2.lengthSquared()
-	    def b = 2*p.dot(v1) - 2*dot/v2.lengthSquared()*p.dot(v2)
-	    def c = p.lengthSquared() - dot*dot/v2.lengthSquared() - radius*radius
+	    // Calculate the two tangent points
+	    def d1 = intersection.minus(p1s)
+	    def d2 = intersection.minus(p2s)
+	    def angle1 = Math.atan2(d1.y, d1.x)
+	    def angle2 = Math.atan2(d2.y, d2.x)
+	    def diff = angle1 - angle2
+	    def dist = radius / Math.abs(Math.sin(diff))
+	    def mid = (d1.plus(d2)).times(0.5)
+	    def normal = new Vector3d(0, 0, 1).cross(mid).normalized()
+	    def offset = normal.times(dist)
+	    def point1 = intersection.plus(d1.normalized().times(dist)).plus(offset)
+	    def point2 = intersection.plus(d2.normalized().times(dist)).minus(offset)
 	
-	    // solve the quadratic equation
-	    def discriminant = b*b - 4*a*c
-	    if (discriminant < 0) {
-	        // no real solutions, return null
-	        println("No real solutions")
-	        return null
-	    } else {
-	        def t1 = (-b - Math.sqrt(discriminant)) / (2*a)
-	        def t2 = (-b + Math.sqrt(discriminant)) / (2*a)
-	
-	        // calculate the two points of intersection
-	        def q1 = p1s.plus(v1.times(t1))
-	        def q2 = p1s.plus(v1.times(t2))
-	
-	        // return the two points
-	        return [q1, q2]
-	    }
+	    // Return the two tangent points
+	    return [point1, point2]
 	}
+
 	
 }
