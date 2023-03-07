@@ -156,6 +156,13 @@ return new ICadGenerator(){
 		CSG starboardTrackArc = portTrackArc.mirrorx()
 		CSG trackShelfPrimitives = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
 		
+		Vector3d portForwardTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2, (double) 0)
+		Vector3d portBackTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), (double) 0)
+		Vector3d backPortTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
+		Vector3d backStarboardTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
+//		Vector3d starboardBackTrackPoint = new Vector3d()
+//		Vector3d starboardFrontTrackPoint = new Vector3d()
+		
 		// Define a shelf for the monorail track using a set of bezier curves
 		BezierEditor trackBezierEditorA = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezA.json"),trackStraightBezierPieces)
 		BezierEditor trackBezierEditorB = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezB.json"),trackCurveBezierPieces)
@@ -163,23 +170,69 @@ return new ICadGenerator(){
 		BezierEditor trackBezierEditorD = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezD.json"),trackCurveBezierPieces)
 		BezierEditor trackBezierEditorE = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezE.json"),trackStraightBezierPieces)
 		
-		//trackBezierEditorA.addBezierToTheEnd(trackBezierEditorB).addBezierToTheEnd(trackBezierEditorC).addBezierToTheEnd(trackBezierEditorD).addBezierToTheEnd(trackBezierEditorE)
-//		trackBezierEditorA.setStart(bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2-5,0)
-//		trackBezierEditorA.setEnd(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), 0)
-//		trackBezierEditorA.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2-55,0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
-//		trackBezierEditorA.setCP2(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, 0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
-		ArrayList<Transform> trackBezTrans = trackBezierEditorA.transforms()
-//		ArrayList<Transform> trackBezTrans = []
-//		trackBezTrans = trackBezTrans.addAll(trackBezierEditorA.transforms())
-//									 .addAll(trackBezierEditorB.transforms())
-//									 .addAll(trackBezierEditorC.transforms())
-//									 .addAll(trackBezierEditorD.transforms())
-//									 .addAll(trackBezierEditorE.transforms())
-		ArrayList<CSG> trackManips = trackBezierEditorA.getCSG()
-		List<Vector3d> trackPoly = [new Vector3d(bayWidth.getMM()/2, -bayDepth.getMM()/2,0),
-									new Vector3d(bayWidth.getMM()/2, bayDepth.getMM()/2,0)]//,
-//									new Vector3d(bayWidth.getMM()/2, -bayDepth.getMM()/2,0),
-//									new Vector3d(bayWidth.getMM()/2, bayDepth.getMM()/2,0)]
+		// Hardcode control points for a single bezier curve
+		trackBezierEditorA.setStart(portForwardTrackPoint)
+		trackBezierEditorA.setCP1(portForwardTrackPoint)
+//			bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2-55,0)															//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorA.setCP2(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, 0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorA.setEnd(portBackTrackPoint)
+		
+		// Append another bezier curve
+//		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorB)
+		
+		// Hardcode control points for a single bezier curve
+		trackBezierEditorB.setStart(portBackTrackPoint)
+		trackBezierEditorB.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorB.setCP2(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorB.setEnd(backPortTrackPoint)
+		
+		// Append another bezier curve
+		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorC)
+		
+		// Hardcode control points for a single bezier curve
+		trackBezierEditorC.setStart(backPortTrackPoint)
+		trackBezierEditorC.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorC.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorC.setEnd(backStarboardTrackPoint)
+		
+		// Append another bezier curve
+//		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorD)
+		
+		// Hardcode control points for a single bezier curve
+		trackBezierEditorD.setStart(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
+		trackBezierEditorD.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorD.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorD.setEnd(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
+		
+		// Append another bezier curve
+//		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorE)
+		
+		// Hardcode control points for a single bezier curve
+		trackBezierEditorE.setStart(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
+		trackBezierEditorE.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorE.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)			//Used to reset control point before manually tweaking - JMS, Mar 2023
+		trackBezierEditorE.setEnd(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
+		
+		// Add all the bezier point-wise transformations to a list, to generate a polygon later for extrusion
+		ArrayList<Transform> trackBezTrans = []
+		trackBezTrans.addAll(trackBezierEditorA.transforms())
+//		trackBezTrans.addAll(trackBezierEditorB.transforms())
+		trackBezTrans.addAll(trackBezierEditorC.transforms())
+//		trackBezTrans.addAll(trackBezierEditorD.transforms())
+//		trackBezTrans.addAll(trackBezierEditorE.transforms())
+		
+		// Create an array of CSG objects to display the cartesian manipulators later
+		ArrayList<CSG> trackManips = []
+		trackManips.addAll(trackBezierEditorA.getCSG())
+		trackManips.addAll(trackBezierEditorB.getCSG())
+		trackManips.addAll(trackBezierEditorC.getCSG())
+//		trackManips.addAll(trackBezierEditorD.getCSG())
+//		trackManips.addAll(trackBezierEditorE.getCSG())
+		
+		List<Vector3d> trackPoly = [new Vector3d(-bayWidth.getMM()/2, bayDepth.getMM()/2,0),
+									new Vector3d(-bayWidth.getMM()/2, -bayDepth.getMM()/2,0),
+									new Vector3d(bayWidth.getMM()/2, -bayDepth.getMM()/2,0),
+									new Vector3d(bayWidth.getMM()/2, bayDepth.getMM()/2,0)]
 		for(Transform trans : trackBezTrans) {
 			trackPoly.add(new Vector3d(trans.getX(),trans.getY(),trans.getZ()))
 		}
