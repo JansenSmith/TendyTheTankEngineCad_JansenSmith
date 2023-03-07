@@ -157,19 +157,20 @@ return new ICadGenerator(){
 		CSG starboardTrackArc = portTrackArc.mirrorx()
 		CSG trackShelfPrimitives = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
 		
-		Vector3d portForwardTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2, (double) 0)
-		Vector3d portBackTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), (double) 0)
-		Vector3d backPortTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
-		Vector3d backStarboardTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
-		Vector3d starboardBackTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
-		Vector3d starboardFrontTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
-		
 		// Define a shelf for the monorail track using a set of bezier curves
 		BezierEditor trackBezierEditorA = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezA.json"),trackStraightBezierPieces)
 		BezierEditor trackBezierEditorB = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezB.json"),trackCurveBezierPieces)
 		BezierEditor trackBezierEditorC = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezC.json"),trackStraightBezierPieces)
 		BezierEditor trackBezierEditorD = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezD.json"),trackCurveBezierPieces)
 		BezierEditor trackBezierEditorE = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezE.json"),trackStraightBezierPieces)
+		
+		// Specify each of the start-end points that define the track's bezier curve
+		Vector3d portForwardTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2, (double) 0)
+		Vector3d portBackTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), (double) 0)
+		Vector3d backPortTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
+		Vector3d backStarboardTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
+		Vector3d starboardBackTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
+		Vector3d starboardFrontTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
 		
 		// Hardcode control points programmatically for a single bezier curve
 		trackBezierEditorA.setStart(portForwardTrackPoint)
@@ -178,7 +179,7 @@ return new ICadGenerator(){
 		trackBezierEditorA.setEnd(portBackTrackPoint)
 		
 		// Append another bezier curve
-//		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorB)
+		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorB)
 		
 		// Hardcode control points programmatically for a single bezier curve
 		trackBezierEditorB.setStart(portBackTrackPoint)
@@ -187,7 +188,7 @@ return new ICadGenerator(){
 		trackBezierEditorB.setEnd(backPortTrackPoint)
 		
 		// Append another bezier curve
-		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorC)
+		trackBezierEditorB.addBezierToTheEnd(trackBezierEditorC)
 		
 		// Hardcode control points programmatically for a single bezier curve
 		trackBezierEditorC.setStart(backPortTrackPoint)
@@ -224,7 +225,7 @@ return new ICadGenerator(){
 		// Create an array of CSG objects to display the cartesian manipulators later
 		ArrayList<CSG> trackManips = []
 		trackManips.addAll(trackBezierEditorA.getCSG())
-		trackManips.addAll(trackBezierEditorB.getCSG())
+//		trackManips.addAll(trackBezierEditorB.getCSG())
 		trackManips.addAll(trackBezierEditorC.getCSG())
 //		trackManips.addAll(trackBezierEditorD.getCSG())
 //		trackManips.addAll(trackBezierEditorE.getCSG())
