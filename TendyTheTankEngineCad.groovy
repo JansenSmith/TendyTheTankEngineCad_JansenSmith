@@ -56,8 +56,8 @@ return new ICadGenerator(){
 		//bucketDistFromWall.setMM(75)
 		
 		// define the parameters for the monorail track shelf
-		def trackStraightBezierPieces = 12
-		def trackCurveBezierPieces = 6
+		def trackStraightBezierPieces = 6
+		def trackCurveBezierPieces = 12
 		LengthParameter railElevation = new LengthParameter("Rail Elevation (mm)", 600, [0, 1000])
 		railElevation.setMM(600)
 		LengthParameter trackDistFromWall = new LengthParameter("Track Distance from Wall (mm)", 25, [0, 1000])
@@ -169,8 +169,8 @@ return new ICadGenerator(){
 		Vector3d portBackTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), (double) 0)
 		Vector3d backPortTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
 		Vector3d backStarboardTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
-		Vector3d starboardBackTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
-		Vector3d starboardFrontTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
+		Vector3d starboardBackTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), (double) 0)
+		Vector3d starboardFrontTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM(), bayDepth.getMM()/2, (double) 0)
 		
 		// Hardcode control points programmatically for a single bezier curve
 		trackBezierEditorA.setStart(portForwardTrackPoint)
@@ -197,7 +197,7 @@ return new ICadGenerator(){
 		trackBezierEditorC.setEnd(backStarboardTrackPoint)
 		
 		// Append another bezier curve
-//		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorD)
+		trackBezierEditorC.addBezierToTheEnd(trackBezierEditorD)
 		
 		// Hardcode control points programmatically for a single bezier curve
 		trackBezierEditorD.setStart(backStarboardTrackPoint)
@@ -206,7 +206,7 @@ return new ICadGenerator(){
 		trackBezierEditorD.setEnd(starboardBackTrackPoint)
 		
 		// Append another bezier curve
-//		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorE)
+		trackBezierEditorD.addBezierToTheEnd(trackBezierEditorE)
 		
 		// Hardcode control points programmatically for a single bezier curve
 		trackBezierEditorE.setStart(starboardBackTrackPoint)
@@ -217,18 +217,18 @@ return new ICadGenerator(){
 		// Add all the bezier point-wise transformations to a list, to generate a polygon later for extrusion
 		ArrayList<Transform> trackBezTrans = []
 		trackBezTrans.addAll(trackBezierEditorA.transforms())
-//		trackBezTrans.addAll(trackBezierEditorB.transforms())
+		trackBezTrans.addAll(trackBezierEditorB.transforms())
 		trackBezTrans.addAll(trackBezierEditorC.transforms())
-//		trackBezTrans.addAll(trackBezierEditorD.transforms())
-//		trackBezTrans.addAll(trackBezierEditorE.transforms())
+		trackBezTrans.addAll(trackBezierEditorD.transforms())
+		trackBezTrans.addAll(trackBezierEditorE.transforms())
 		
 		// Create an array of CSG objects to display the cartesian manipulators later
 		ArrayList<CSG> trackManips = []
 		trackManips.addAll(trackBezierEditorA.getCSG())
-//		trackManips.addAll(trackBezierEditorB.getCSG())
+		trackManips.addAll(trackBezierEditorB.getCSG())
 		trackManips.addAll(trackBezierEditorC.getCSG())
-//		trackManips.addAll(trackBezierEditorD.getCSG())
-//		trackManips.addAll(trackBezierEditorE.getCSG())
+		trackManips.addAll(trackBezierEditorD.getCSG())
+		trackManips.addAll(trackBezierEditorE.getCSG())
 		
 		List<Vector3d> trackPoly = [new Vector3d(-bayWidth.getMM()/2, bayDepth.getMM()/2,0),
 									new Vector3d(-bayWidth.getMM()/2, -bayDepth.getMM()/2,0),
