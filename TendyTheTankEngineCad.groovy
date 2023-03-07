@@ -61,7 +61,7 @@ return new ICadGenerator(){
 		LengthParameter railElevation = new LengthParameter("Rail Elevation (mm)", 600, [0, 1000])
 		railElevation.setMM(600)
 		LengthParameter trackDistFromWall = new LengthParameter("Track Distance from Wall (mm)", 25, [0, 1000])
-		trackDistFromWall.setMM(25)
+		trackDistFromWall.setMM(40)
 		
 		// define the parameters for the monorail linear gears
 		LengthParameter turningRadius = new LengthParameter("Minimum Turning Radius of the Monorail (mm)", 50, [0, 300])
@@ -247,7 +247,7 @@ return new ICadGenerator(){
 								.movex(0)
 								.movey(0)
 								.movez(railElevation.getMM())
-//	    trackShelf = trackShelf.transformed(trackTrans)
+	    trackShelf = trackShelf.transformed(trackTrans)
 		
 		// Save trackShelf to a temporary CSG so that addTabs uses the correct edge lengths
 		CSG trackShelfTemp = trackShelf
@@ -324,12 +324,12 @@ return new ICadGenerator(){
 		starboardWall.addAssemblyStep(3, new Transform().movex(-50))
 		
 		// Add colored components to returned list, for rendering
-//		back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
+		back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
 		back.add(trackShelf.setColor(javafx.scene.paint.Color.RED))
-//		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
-//		back.add(portWall.setColor(javafx.scene.paint.Color.CYAN))
-//		back.add(starboardWall.setColor(javafx.scene.paint.Color.AQUAMARINE))
-//		back.addAll(fasteners)
+		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
+		back.add(portWall.setColor(javafx.scene.paint.Color.CYAN))
+		back.add(starboardWall.setColor(javafx.scene.paint.Color.AQUAMARINE))
+		back.addAll(fasteners)
 		
 		
 		for(CSG c:back)
@@ -342,7 +342,7 @@ return new ICadGenerator(){
 
 		}
 //		back.addAll(armManips)	//			Uncomment to show and edit the bezier arm manipulators - JMS, Feb 2023
-		back.addAll(trackManips)	//			Uncomment to show and edit the bezier track manipulators - JMS, Mar 2023
+//		back.addAll(trackManips)	//			Uncomment to show and edit the bezier track manipulators - JMS, Mar 2023
 		
 		return back;
 	}
