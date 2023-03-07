@@ -172,6 +172,8 @@ return new ICadGenerator(){
 		Vector3d starboardBackTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), (double) 0)
 		Vector3d starboardFrontTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM(), bayDepth.getMM()/2, (double) 0)
 		
+		// TODO: should really specify the control points of the rounded corner beziers to explicitly take into account the turningRadius and generate a true arc
+
 		// Hardcode control points programmatically for a single bezier curve
 		trackBezierEditorA.setStart(portForwardTrackPoint)
 		trackBezierEditorA.setCP1(portForwardTrackPoint.x, portForwardTrackPoint.y-50, portForwardTrackPoint.z)
