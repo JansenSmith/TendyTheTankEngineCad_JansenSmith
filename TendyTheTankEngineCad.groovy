@@ -170,35 +170,35 @@ return new ICadGenerator(){
 		BezierEditor trackBezierEditorD = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezD.json"),trackCurveBezierPieces)
 		BezierEditor trackBezierEditorE = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezE.json"),trackStraightBezierPieces)
 		
-		// Hardcode control points for a single bezier curve
+		// Hardcode control points programmatically for a single bezier curve
 		trackBezierEditorA.setStart(portForwardTrackPoint)
-		trackBezierEditorA.setCP1(portForwardTrackPoint.x,portForwardTrackPoint.y-50,portForwardTrackPoint.z)
-		trackBezierEditorA.setCP2(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, 0)
+		trackBezierEditorA.setCP1(portForwardTrackPoint.x, portForwardTrackPoint.y-50, portForwardTrackPoint.z)
+		trackBezierEditorA.setCP2(portBackTrackPoint.x, portBackTrackPoint.y+50, portBackTrackPoint.z)
 		trackBezierEditorA.setEnd(portBackTrackPoint)
 		
 		// Append another bezier curve
 //		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorB)
 		
-		// Hardcode control points for a single bezier curve
+		// Hardcode control points programmatically for a single bezier curve
 		trackBezierEditorB.setStart(portBackTrackPoint)
-		trackBezierEditorB.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
-		trackBezierEditorB.setCP2(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
+		trackBezierEditorB.setCP1(portBackTrackPoint.x, portBackTrackPoint.y-30, portBackTrackPoint.z)
+		trackBezierEditorB.setCP2(backPortTrackPoint.x+30, backPortTrackPoint.y, backPortTrackPoint.z)
 		trackBezierEditorB.setEnd(backPortTrackPoint)
 		
 		// Append another bezier curve
 		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorC)
 		
-		// Hardcode control points for a single bezier curve
+		// Hardcode control points programmatically for a single bezier curve
 		trackBezierEditorC.setStart(backPortTrackPoint)
-		trackBezierEditorC.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
-		trackBezierEditorC.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
+		trackBezierEditorC.setCP1(backPortTrackPoint.x-50, backPortTrackPoint.y, backPortTrackPoint.z)
+		trackBezierEditorC.setCP2(backStarboardTrackPoint.x+50, backStarboardTrackPoint.y, backStarboardTrackPoint.z)
 		trackBezierEditorC.setEnd(backStarboardTrackPoint)
 		
 		// Append another bezier curve
 //		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorD)
 		
-		// Hardcode control points for a single bezier curve
-		trackBezierEditorD.setStart(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
+		// Hardcode control points programmatically for a single bezier curve
+		trackBezierEditorD.setStart(backStarboardTrackPoint)
 		trackBezierEditorD.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
 		trackBezierEditorD.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
 		trackBezierEditorD.setEnd(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
@@ -206,7 +206,7 @@ return new ICadGenerator(){
 		// Append another bezier curve
 //		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorE)
 		
-		// Hardcode control points for a single bezier curve
+		// Hardcode control points programmatically for a single bezier curve
 		trackBezierEditorE.setStart(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
 		trackBezierEditorE.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
 		trackBezierEditorE.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
