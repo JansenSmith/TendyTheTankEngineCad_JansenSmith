@@ -1,4 +1,5 @@
-import com.neuronrobotics.bowlerkernel.Bezier3d.*;
+import com.neuronrobotics.bowlerkernel.Bezier3d.*
+import com.neuronrobotics.bowlerkernel.Bezier3d.BezierEditor
 
 import com.neuronrobotics.bowlerstudio.creature.ICadGenerator
 import com.neuronrobotics.sdk.addons.kinematics.DHParameterKinematics
@@ -160,8 +161,8 @@ return new ICadGenerator(){
 		Vector3d portBackTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), (double) 0)
 		Vector3d backPortTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
 		Vector3d backStarboardTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
-//		Vector3d starboardBackTrackPoint = new Vector3d()
-//		Vector3d starboardFrontTrackPoint = new Vector3d()
+		Vector3d starboardBackTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
+		Vector3d starboardFrontTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), (double) 0)
 		
 		// Define a shelf for the monorail track using a set of bezier curves
 		BezierEditor trackBezierEditorA = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezA.json"),trackStraightBezierPieces)
@@ -199,18 +200,18 @@ return new ICadGenerator(){
 		
 		// Hardcode control points programmatically for a single bezier curve
 		trackBezierEditorD.setStart(backStarboardTrackPoint)
-		trackBezierEditorD.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
-		trackBezierEditorD.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
-		trackBezierEditorD.setEnd(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
+		trackBezierEditorD.setCP1(backStarboardTrackPoint.x-30, backStarboardTrackPoint.y, backStarboardTrackPoint.z)
+		trackBezierEditorD.setCP2(starboardBackTrackPoint.x, starboardBackTrackPoint.y-30, starboardBackTrackPoint.z)
+		trackBezierEditorD.setEnd(starboardBackTrackPoint)
 		
 		// Append another bezier curve
 //		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorE)
 		
 		// Hardcode control points programmatically for a single bezier curve
-		trackBezierEditorE.setStart(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
-		trackBezierEditorE.setCP1(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()-50, -bayDepth.getMM()/2+trackDistFromWall.getMM(),0)
-		trackBezierEditorE.setCP2(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM()+50, -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
-		trackBezierEditorE.setEnd(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
+		trackBezierEditorE.setStart(starboardBackTrackPoint)
+		trackBezierEditorE.setCP1(starboardBackTrackPoint.x, starboardBackTrackPoint.y+50, starboardBackTrackPoint.z)
+		trackBezierEditorE.setCP2(starboardFrontTrackPoint.x, starboardFrontTrackPoint.y-50, starboardFrontTrackPoint.z)
+		trackBezierEditorE.setEnd(starboardFrontTrackPoint)
 		
 		// Add all the bezier point-wise transformations to a list, to generate a polygon later for extrusion
 		ArrayList<Transform> trackBezTrans = []
