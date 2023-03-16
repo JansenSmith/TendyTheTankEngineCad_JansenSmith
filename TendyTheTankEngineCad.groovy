@@ -2,6 +2,7 @@ import com.neuronrobotics.bowlerkernel.Bezier3d.*
 import com.neuronrobotics.bowlerkernel.Bezier3d.BezierEditor
 
 import com.neuronrobotics.bowlerstudio.creature.ICadGenerator
+import com.neuronrobotics.bowlerstudio.scripting.ScriptingEngine
 import com.neuronrobotics.sdk.addons.kinematics.DHParameterKinematics
 import com.neuronrobotics.sdk.addons.kinematics.MobileBase
 
@@ -13,6 +14,8 @@ import marytts.signalproc.sinusoidal.TrackModifier
 
 
 return new ICadGenerator(){
+	
+	ICadGenerator lift = ScriptingEngine.gitScriptRun('https://github.com/TechnocopiaPlant/ForkyRobot.git', 'ForkyLiftCad.groovy')
 
 	@Override
 	public ArrayList<CSG> generateCad(DHParameterKinematics arg0, int arg1) {
@@ -29,6 +32,8 @@ return new ICadGenerator(){
 		// Initialize an empty ArrayList to hold the generated CSG objects
 		ArrayList<CSG> back =[]
 		
+		def production = false
+		
 		// Define URL link to the GitHub repo for this robot
 		def URL="https://github.com/TechnocopiaPlant/TendyTheTankEngine.git"
 		
@@ -41,11 +46,12 @@ return new ICadGenerator(){
 		LengthParameter bayDepth = new LengthParameter("Bay Depth (mm)", 400, [0, 1000])
 		//bayDepth.setMM(379.5)
 		//bayDepth.setMM(390)
-		bayDepth.setMM(400)
+		//bayDepth.setMM(400)
 		//bayDepth.setMM(420)
 		//bayDepth.setMM(440)
+		bayDepth.setMM(700)
 		LengthParameter bayWidth = new LengthParameter("Bay Width (mm)", 400, [0, 1000])
-		bayWidth.setMM(400)
+		bayWidth.setMM(500)
 		LengthParameter bayHeight = new LengthParameter("Bay Height (mm)", 1300, [0, 5000])
 		bayHeight.setMM(1400)
 		
@@ -113,7 +119,7 @@ return new ICadGenerator(){
 		
 		plantGuide = plantGuide.union(armGuidePort)
 		plantGuide = plantGuide.union(armGuideStarboard)
-		plantGuide = plantGuide.movez(railElevation.getMM()/2)
+		plantGuide = plantGuide.movez(railElevation.getMM()/4)
 		
 		// Instantiate a bucket to hold fastener CSG objects in
 		ArrayList<CSG> fasteners = []
@@ -154,7 +160,8 @@ return new ICadGenerator(){
 				nutsertGridPlate.add(netmoverP.movey(gridUnits*i)
 						   .movex(gridUnits*j))
 		}
-		gridBoard = gridBoard.difference(nutsertGridPlate)
+		if (production)
+			gridBoard = gridBoard.difference(nutsertGridPlate)
 		
 		CSG gridBoardTemp = gridBoard
 		
