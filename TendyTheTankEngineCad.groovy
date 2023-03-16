@@ -113,7 +113,7 @@ return new ICadGenerator(){
 		
 		plantGuide = plantGuide.union(armGuidePort)
 		plantGuide = plantGuide.union(armGuideStarboard)
-		plantGuide = plantGuide.movez(railElevation.getMM())
+		plantGuide = plantGuide.movez(railElevation.getMM()/2)
 		
 		// Instantiate a bucket to hold fastener CSG objects in
 		ArrayList<CSG> fasteners = []
@@ -134,6 +134,43 @@ return new ICadGenerator(){
 		// Add tabs to the X- side
 		returned = plantGuideTemp.addTabs(new Vector3d(-1, 0, 0), screwDiameter);
 		plantGuide = plantGuide.union(returned.get(0));
+		fasteners.addAll(returned.subList(1, returned.size()));
+		
+		CSG gridBoard = new Cube(bayWidth.getMM(),bayDepth.getMM(),boardThickness.getMM()).toCSG()
+							.movez(-boardThickness.getMM()/2)
+							
+		println "Making hole grid"
+		def nutsertGridPlate= []
+		def gridUnits = 25 		// 25mm grid spacing
+		def gridMaxX = Math.floor(gridBoard.getMaxX()/gridUnits)
+		def gridMaxY = Math.floor(gridBoard.getMaxY()/gridUnits)
+		def gridMinX = Math.ceil(gridBoard.getMinX()/gridUnits)+1
+		def gridMinY = Math.ceil(gridBoard.getMinY()/gridUnits)+1
+		def netmoverP= new Cylinder(5.0/2,boardThickness.getMM()).toCSG() // sized to M5 bolt
+					.toZMin()
+					.movez(-boardThickness.getMM())
+		for(int i=gridMinY;i<(gridMaxY);i++)
+			for(int j=gridMinX;j<(gridMaxX);j++){
+				nutsertGridPlate.add(netmoverP.movey(gridUnits*i)
+						   .movex(gridUnits*j))
+		}
+		gridBoard = gridBoard.difference(nutsertGridPlate)
+		
+		CSG gridBoardTemp = gridBoard
+		
+		// Add tabs to the Y- side
+		returned = gridBoardTemp.addTabs(new Vector3d(0, -1, 0), screwDiameter);
+		gridBoard = gridBoard.union(returned.get(0));
+		fasteners.addAll(returned.subList(1, returned.size()));
+
+		// Add tabs to the X+ side
+		returned = gridBoardTemp.addTabs(new Vector3d(1, 0, 0), screwDiameter);
+		gridBoard = gridBoard.union(returned.get(0));
+		fasteners.addAll(returned.subList(1, returned.size()));
+
+		// Add tabs to the X- side
+		returned = gridBoardTemp.addTabs(new Vector3d(-1, 0, 0), screwDiameter);
+		gridBoard = gridBoard.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
 //		// Define a shelf for the monorail track using primitives
@@ -268,12 +305,12 @@ return new ICadGenerator(){
 //		trackShelf = trackShelf.union(returned.get(0));
 //		fasteners.addAll(returned.subList(1, returned.size()));
 		
-		CSG portWall = new Cube(boardThickness.getMM(),bayDepth.getMM(),bayHeight.getMM()/2).toCSG()
+		CSG portWall = new Cube(boardThickness.getMM(),bayDepth.getMM(),bayHeight.getMM()).toCSG()
 			.movex(bayWidth.getMM()/2 + boardThickness.getMM()/2)
-			.movez(bayHeight.getMM()/4)
+			.movez(bayHeight.getMM()/2-boardThickness.getMM())
 		CSG starboardWall = portWall.mirrorx()
-		portWall = portWall.difference(plantGuide).difference(fasteners)//.difference(trackShelf)
-		starboardWall = starboardWall.difference(plantGuide).difference(fasteners)//.difference(trackShelf)
+		portWall = portWall.difference(plantGuide).difference(fasteners).difference(gridBoard)
+		starboardWall = starboardWall.difference(plantGuide).difference(fasteners).difference(gridBoard)
 		
 		// Save portWall to a temporary CSG so that addTabs uses the correct edge lengths
 		CSG wallTemp = portWall
@@ -291,11 +328,11 @@ return new ICadGenerator(){
 		starboardWall = starboardWall.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
-		CSG backWall = new Cube(bayWidth.getMM()+boardThickness.getMM()*2, boardThickness.getMM(), bayHeight.getMM()/2).toCSG()
+		CSG backWall = new Cube(bayWidth.getMM()+boardThickness.getMM()*2, boardThickness.getMM(), bayHeight.getMM()).toCSG()
 			.movex(0)
 			.movey(-bayDepth.getMM()/2-boardThickness.getMM()/2)
-			.movez(bayHeight.getMM()/4)
-		backWall = backWall.difference(plantGuide).difference(trackShelf).difference(portWall).difference(starboardWall).difference(fasteners)
+			.movez(bayHeight.getMM()/2-boardThickness.getMM())
+		backWall = backWall.difference(plantGuide).difference(portWall).difference(starboardWall).difference(fasteners).difference(gridBoard)
 		
 //		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -324,13 +361,15 @@ return new ICadGenerator(){
 //		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		
 		// Assign each component an assembly step, for the exploded view visualization
-		plantGuide.addAssemblyStep(1, new Transform())
+		gridBoard.addAssemblyStep(1, new Transform())
+		plantGuide.addAssemblyStep(2, new Transform().movez(100))
 //		trackShelf.addAssemblyStep(2, new Transform().movez(100))
 		backWall.addAssemblyStep(3, new Transform().movey(-50))
 		portWall.addAssemblyStep(3, new Transform().movex(50))
 		starboardWall.addAssemblyStep(3, new Transform().movex(-50))
 		
 		// Add colored components to returned list, for rendering
+		back.add(gridBoard.setColor(javafx.scene.paint.Color.BROWN))
 		back.add(plantGuide.setColor(javafx.scene.paint.Color.MAGENTA))
 //		back.add(trackShelf.setColor(javafx.scene.paint.Color.RED))
 		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
