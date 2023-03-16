@@ -2,10 +2,11 @@ import com.neuronrobotics.bowlerkernel.Bezier3d.*
 import com.neuronrobotics.bowlerkernel.Bezier3d.BezierEditor
 
 import com.neuronrobotics.bowlerstudio.creature.ICadGenerator
+import com.neuronrobotics.bowlerstudio.physics.TransformFactory
 import com.neuronrobotics.bowlerstudio.scripting.ScriptingEngine
 import com.neuronrobotics.sdk.addons.kinematics.DHParameterKinematics
 import com.neuronrobotics.sdk.addons.kinematics.MobileBase
-
+import com.neuronrobotics.sdk.addons.kinematics.math.TransformNR
 import eu.mihosoft.vrl.v3d.*
 import eu.mihosoft.vrl.v3d.Vector3d
 import eu.mihosoft.vrl.v3d.CSG
@@ -15,20 +16,29 @@ import marytts.signalproc.sinusoidal.TrackModifier
 
 return new ICadGenerator(){
 	
+	// Load ForkyLiftCad.groovy script from TechnocopiaPlant/ForkyRobot repository
 	ICadGenerator lift = ScriptingEngine.gitScriptRun('https://github.com/TechnocopiaPlant/ForkyRobot.git', 'ForkyLiftCad.groovy')
 
 	@Override
-	public ArrayList<CSG> generateCad(DHParameterKinematics arg0, int arg1) {
-		// TODO Auto-generated method stub
-		ArrayList<CSG> back =[]
-		back.add(new Cube(1).toCSG())
-		for(CSG c:back)
-			c.setManipulator(arg0.getLinkObjectManipulator(arg1))
-		return back;
+	public ArrayList<CSG> generateCad(DHParameterKinematics kinematics, int linkIndex) {
+		ArrayList<CSG> back = []
+		ArrayList<CSG> liftImportCAD = lift.generateCad(kinematics, linkIndex)
+		ArrayList<CSG> liftCAD = []
+		
+		for (CSG c : liftImportCAD) {
+		    String name = c.getName()
+		    if (name != null && !name.toLowerCase().contains("bucket")) {
+		        liftCAD.add(c)
+		    }
+		}
+		
+		back.addAll(liftCAD)
+		return back
 	}
 
 	@Override
 	public ArrayList<CSG> generateBody(MobileBase arg0) {
+		
 		// Initialize an empty ArrayList to hold the generated CSG objects
 		ArrayList<CSG> back =[]
 		
@@ -366,6 +376,9 @@ return new ICadGenerator(){
 //		
 //		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		
+		TransformNR liftTrans = TransformFactory.csgToNR(new Transform().rotz(-90))
+		arg0.getAllDHChains().get(0).setRobotToFiducialTransform(liftTrans)
 		
 		// Assign each component an assembly step, for the exploded view visualization
 		gridBoard.addAssemblyStep(1, new Transform())
