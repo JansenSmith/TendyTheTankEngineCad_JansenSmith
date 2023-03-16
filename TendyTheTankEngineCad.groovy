@@ -75,13 +75,13 @@ return new ICadGenerator(){
 		LengthParameter screwSpacing = new LengthParameter("Distance Between Construction Screws (mm)", 150, [0, 400])
 		screwSpacing.setMM(150)
 		
-		CSG plantShelf = new Cube(bayDepth.getMM()/2, bayWidth.getMM(), boardThickness.getMM()).toCSG()
+		CSG plantGuide = new Cube(bayDepth.getMM()/2, bayWidth.getMM(), boardThickness.getMM()).toCSG()
 			.movex(bayDepth.getMM()/4)
 			.movey(0)
 			.movez(boardThickness.getMM()/2)
 			.rotz(90)
 		CSG bucketGhost = new Cylinder(bucketDiameter.getMM()/2,boardThickness.getMM(), (int) 40).toCSG()
-		plantShelf = plantShelf.difference(bucketGhost)
+		plantGuide = plantGuide.difference(bucketGhost)
 		
 		// Define the port & starboard plantShelf arms, used to guide the bucket into place
 		def armDepth = bayDepth.getMM()/3
@@ -108,171 +108,172 @@ return new ICadGenerator(){
 		CSG armBez = Extrude.points(new Vector3d(0,0,boardThickness.getMM()),armPoly)
 		
 		// Use either the rectangular arms or the bezier guided arms
-		CSG armShelfPort = armBez
-		CSG armShelfStarboard = armShelfPort.mirrorx()
+		CSG armGuidePort = armBez
+		CSG armGuideStarboard = armGuidePort.mirrorx()
 		
-		plantShelf = plantShelf.union(armShelfPort)
-		plantShelf = plantShelf.union(armShelfStarboard)
+		plantGuide = plantGuide.union(armGuidePort)
+		plantGuide = plantGuide.union(armGuideStarboard)
+		plantGuide = plantGuide.movez(railElevation.getMM())
 		
 		// Instantiate a bucket to hold fastener CSG objects in
 		ArrayList<CSG> fasteners = []
 		
 		// Save plantShelf to a temporary CSG so that addTabs uses the correct edge lengths
-		CSG plantShelfTemp = plantShelf
+		CSG plantGuideTemp = plantGuide
 		
 		// Add tabs to the Y- side
-		ArrayList<CSG> returned = plantShelfTemp.addTabs(new Vector3d(0, -1, 0), screwDiameter);
-		plantShelf = plantShelf.union(returned.get(0));
+		ArrayList<CSG> returned = plantGuideTemp.addTabs(new Vector3d(0, -1, 0), screwDiameter);
+		plantGuide = plantGuide.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
 		// Add tabs to the X+ side
-		returned = plantShelfTemp.addTabs(new Vector3d(1, 0, 0), screwDiameter);
-		plantShelf = plantShelf.union(returned.get(0));
+		returned = plantGuideTemp.addTabs(new Vector3d(1, 0, 0), screwDiameter);
+		plantGuide = plantGuide.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
 		// Add tabs to the X- side
-		returned = plantShelfTemp.addTabs(new Vector3d(-1, 0, 0), screwDiameter);
-		plantShelf = plantShelf.union(returned.get(0));
+		returned = plantGuideTemp.addTabs(new Vector3d(-1, 0, 0), screwDiameter);
+		plantGuide = plantGuide.union(returned.get(0));
 		fasteners.addAll(returned.subList(1, returned.size()));
 		
-		// Define a shelf for the monorail track using primitives
-		CSG portTrack = new Cube(trackDistFromWall.getMM(), bayDepth.getMM(), boardThickness.getMM()).toCSG()
-			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()/2)
-			.movey(0)
-			.movez(0)
-		CSG starboardTrack = portTrack.mirrorx()
-		CSG backTrack = new Cube(bayWidth.getMM(), trackDistFromWall.getMM(), boardThickness.getMM()).toCSG()
-			.movex(0)
-			.movey(-bayDepth.getMM()/2+trackDistFromWall.getMM()/2)
-			.movez(0)
-		CSG portTrackCircle = new Cylinder(turningRadius.getMM(), boardThickness.getMM(), (int) 16 ).toCSG()
-			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM())
-			.movey(-(bayDepth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()))
-			.movez(-boardThickness.getMM()/2)
-		CSG portTrackSquare = new Cube(turningRadius.getMM(), turningRadius.getMM(), boardThickness.getMM()).toCSG()
-			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()/2)
-			.movey(-(bayDepth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()/2))
-			.movez(0)
-		CSG portTrackArc = portTrackSquare.difference(portTrackCircle)
-		CSG starboardTrackArc = portTrackArc.mirrorx()
-		CSG trackShelfPrimitives = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
-		
-		// Define a shelf for the monorail track using a set of bezier curves
-		BezierEditor trackBezierEditorA = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezA.json"),trackStraightBezierPieces)
-		BezierEditor trackBezierEditorB = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezB.json"),trackCurveBezierPieces)
-		BezierEditor trackBezierEditorC = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezC.json"),trackStraightBezierPieces)
-		BezierEditor trackBezierEditorD = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezD.json"),trackCurveBezierPieces)
-		BezierEditor trackBezierEditorE = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezE.json"),trackStraightBezierPieces)
-		
-		// Specify each of the start-end points that define the track's bezier curve
-		Vector3d portForwardTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2, 0)
-		Vector3d portBackTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), 0)
-		Vector3d backPortTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
-		Vector3d backStarboardTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
-		Vector3d starboardBackTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), 0)
-		Vector3d starboardFrontTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM(), bayDepth.getMM()/2, 0)
-		
-		// TODO: should really specify the control points of the rounded corner beziers to explicitly take into account the turningRadius and generate a true arc
-
-		// Hardcode control points programmatically for a single bezier curve
-		trackBezierEditorA.setStart(portForwardTrackPoint)
-		trackBezierEditorA.setCP1(portForwardTrackPoint.x, portForwardTrackPoint.y-50, portForwardTrackPoint.z)
-		trackBezierEditorA.setCP2(portBackTrackPoint.x, portBackTrackPoint.y+50, portBackTrackPoint.z)
-		trackBezierEditorA.setEnd(portBackTrackPoint)
-		
-		// Append another bezier curve
-		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorB)
-		
-		// Hardcode control points programmatically for a single bezier curve
-		trackBezierEditorB.setStart(portBackTrackPoint)
-		trackBezierEditorB.setCP1(portBackTrackPoint.x, portBackTrackPoint.y-30, portBackTrackPoint.z)
-		trackBezierEditorB.setCP2(backPortTrackPoint.x+30, backPortTrackPoint.y, backPortTrackPoint.z)
-		trackBezierEditorB.setEnd(backPortTrackPoint)
-		
-		// Append another bezier curve
-		trackBezierEditorB.addBezierToTheEnd(trackBezierEditorC)
-		
-		// Hardcode control points programmatically for a single bezier curve
-		trackBezierEditorC.setStart(backPortTrackPoint)
-		trackBezierEditorC.setCP1(backPortTrackPoint.x-50, backPortTrackPoint.y, backPortTrackPoint.z)
-		trackBezierEditorC.setCP2(backStarboardTrackPoint.x+50, backStarboardTrackPoint.y, backStarboardTrackPoint.z)
-		trackBezierEditorC.setEnd(backStarboardTrackPoint)
-		
-		// Append another bezier curve
-		trackBezierEditorC.addBezierToTheEnd(trackBezierEditorD)
-		
-		// Hardcode control points programmatically for a single bezier curve
-		trackBezierEditorD.setStart(backStarboardTrackPoint)
-		trackBezierEditorD.setCP1(backStarboardTrackPoint.x-30, backStarboardTrackPoint.y, backStarboardTrackPoint.z)
-		trackBezierEditorD.setCP2(starboardBackTrackPoint.x, starboardBackTrackPoint.y-30, starboardBackTrackPoint.z)
-		trackBezierEditorD.setEnd(starboardBackTrackPoint)
-		
-		// Append another bezier curve
-		trackBezierEditorD.addBezierToTheEnd(trackBezierEditorE)
-		
-		// Hardcode control points programmatically for a single bezier curve
-		trackBezierEditorE.setStart(starboardBackTrackPoint)
-		trackBezierEditorE.setCP1(starboardBackTrackPoint.x, starboardBackTrackPoint.y+50, starboardBackTrackPoint.z)
-		trackBezierEditorE.setCP2(starboardFrontTrackPoint.x, starboardFrontTrackPoint.y-50, starboardFrontTrackPoint.z)
-		trackBezierEditorE.setEnd(starboardFrontTrackPoint)
-		
-		// Add all the bezier point-wise transformations to a list, to generate a polygon later for extrusion
-		ArrayList<Transform> trackBezTrans = []
-		trackBezTrans.addAll(trackBezierEditorA.transforms())
-		trackBezTrans.addAll(trackBezierEditorB.transforms())
-		trackBezTrans.addAll(trackBezierEditorC.transforms())
-		trackBezTrans.addAll(trackBezierEditorD.transforms())
-		trackBezTrans.addAll(trackBezierEditorE.transforms())
-		
-		// Create an array of CSG objects to display the cartesian manipulators later
-		ArrayList<CSG> trackManips = []
-		trackManips.addAll(trackBezierEditorA.getCSG())
-		trackManips.addAll(trackBezierEditorB.getCSG())
-		trackManips.addAll(trackBezierEditorC.getCSG())
-		trackManips.addAll(trackBezierEditorD.getCSG())
-		trackManips.addAll(trackBezierEditorE.getCSG())
-		
-		List<Vector3d> trackPoly = [new Vector3d(-bayWidth.getMM()/2, bayDepth.getMM()/2,0),
-									new Vector3d(-bayWidth.getMM()/2, -bayDepth.getMM()/2,0),
-									new Vector3d(bayWidth.getMM()/2, -bayDepth.getMM()/2,0),
-									new Vector3d(bayWidth.getMM()/2, bayDepth.getMM()/2,0)]
-		for(Transform trans : trackBezTrans) {
-			trackPoly.add(new Vector3d(trans.getX(),trans.getY(),trans.getZ()))
-		}
-		CSG trackShelfBez = Extrude.points(new Vector3d(0,0,boardThickness.getMM()),trackPoly)
-		
-		// Select either bezier track shelf or primitives track shelf
-		CSG trackShelf = trackShelfBez
-		def trackTrans = new Transform()
-								.movex(0)
-								.movey(0)
-								.movez(railElevation.getMM())
-	    trackShelf = trackShelf.transformed(trackTrans)
-		
-		// Save trackShelf to a temporary CSG so that addTabs uses the correct edge lengths
-		CSG trackShelfTemp = trackShelf
-		
-		// Add tabs to the Y- side
-		returned = trackShelfTemp.addTabs(new Vector3d(0, -1, 0), screwDiameter);
-		trackShelf = trackShelf.union(returned.get(0));
-		fasteners.addAll(returned.subList(1, returned.size()));
-		
-		// Add tabs to the X+ side
-		returned = trackShelfTemp.addTabs(new Vector3d(1, 0, 0), screwDiameter);
-		trackShelf = trackShelf.union(returned.get(0));
-		fasteners.addAll(returned.subList(1, returned.size()));
-		
-		// Add tabs to the X- side
-		returned = trackShelfTemp.addTabs(new Vector3d(-1, 0, 0), screwDiameter);
-		trackShelf = trackShelf.union(returned.get(0));
-		fasteners.addAll(returned.subList(1, returned.size()));
+//		// Define a shelf for the monorail track using primitives
+//		CSG portTrack = new Cube(trackDistFromWall.getMM(), bayDepth.getMM(), boardThickness.getMM()).toCSG()
+//			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()/2)
+//			.movey(0)
+//			.movez(0)
+//		CSG starboardTrack = portTrack.mirrorx()
+//		CSG backTrack = new Cube(bayWidth.getMM(), trackDistFromWall.getMM(), boardThickness.getMM()).toCSG()
+//			.movex(0)
+//			.movey(-bayDepth.getMM()/2+trackDistFromWall.getMM()/2)
+//			.movez(0)
+//		CSG portTrackCircle = new Cylinder(turningRadius.getMM(), boardThickness.getMM(), (int) 16 ).toCSG()
+//			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM())
+//			.movey(-(bayDepth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()))
+//			.movez(-boardThickness.getMM()/2)
+//		CSG portTrackSquare = new Cube(turningRadius.getMM(), turningRadius.getMM(), boardThickness.getMM()).toCSG()
+//			.movex(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()/2)
+//			.movey(-(bayDepth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM()/2))
+//			.movez(0)
+//		CSG portTrackArc = portTrackSquare.difference(portTrackCircle)
+//		CSG starboardTrackArc = portTrackArc.mirrorx()
+//		CSG trackShelfPrimitives = portTrack.union(starboardTrack).union(backTrack).union(portTrackArc).union(starboardTrackArc)
+//		
+//		// Define a shelf for the monorail track using a set of bezier curves
+//		BezierEditor trackBezierEditorA = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezA.json"),trackStraightBezierPieces)
+//		BezierEditor trackBezierEditorB = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezB.json"),trackCurveBezierPieces)
+//		BezierEditor trackBezierEditorC = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezC.json"),trackStraightBezierPieces)
+//		BezierEditor trackBezierEditorD = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezD.json"),trackCurveBezierPieces)
+//		BezierEditor trackBezierEditorE = new BezierEditor(ScriptingEngine.fileFromGit(URL, "trackBezE.json"),trackStraightBezierPieces)
+//		
+//		// Specify each of the start-end points that define the track's bezier curve
+//		Vector3d portForwardTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), bayDepth.getMM()/2, 0)
+//		Vector3d portBackTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), 0)
+//		Vector3d backPortTrackPoint = new Vector3d(bayWidth.getMM()/2-trackDistFromWall.getMM()-turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
+//		Vector3d backStarboardTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM(), 0)
+//		Vector3d starboardBackTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM(), -bayDepth.getMM()/2+trackDistFromWall.getMM()+turningRadius.getMM(), 0)
+//		Vector3d starboardFrontTrackPoint = new Vector3d(-bayWidth.getMM()/2+trackDistFromWall.getMM(), bayDepth.getMM()/2, 0)
+//		
+//		// TODO: should really specify the control points of the rounded corner beziers to explicitly take into account the turningRadius and generate a true arc
+//
+//		// Hardcode control points programmatically for a single bezier curve
+//		trackBezierEditorA.setStart(portForwardTrackPoint)
+//		trackBezierEditorA.setCP1(portForwardTrackPoint.x, portForwardTrackPoint.y-50, portForwardTrackPoint.z)
+//		trackBezierEditorA.setCP2(portBackTrackPoint.x, portBackTrackPoint.y+50, portBackTrackPoint.z)
+//		trackBezierEditorA.setEnd(portBackTrackPoint)
+//		
+//		// Append another bezier curve
+//		trackBezierEditorA.addBezierToTheEnd(trackBezierEditorB)
+//		
+//		// Hardcode control points programmatically for a single bezier curve
+//		trackBezierEditorB.setStart(portBackTrackPoint)
+//		trackBezierEditorB.setCP1(portBackTrackPoint.x, portBackTrackPoint.y-30, portBackTrackPoint.z)
+//		trackBezierEditorB.setCP2(backPortTrackPoint.x+30, backPortTrackPoint.y, backPortTrackPoint.z)
+//		trackBezierEditorB.setEnd(backPortTrackPoint)
+//		
+//		// Append another bezier curve
+//		trackBezierEditorB.addBezierToTheEnd(trackBezierEditorC)
+//		
+//		// Hardcode control points programmatically for a single bezier curve
+//		trackBezierEditorC.setStart(backPortTrackPoint)
+//		trackBezierEditorC.setCP1(backPortTrackPoint.x-50, backPortTrackPoint.y, backPortTrackPoint.z)
+//		trackBezierEditorC.setCP2(backStarboardTrackPoint.x+50, backStarboardTrackPoint.y, backStarboardTrackPoint.z)
+//		trackBezierEditorC.setEnd(backStarboardTrackPoint)
+//		
+//		// Append another bezier curve
+//		trackBezierEditorC.addBezierToTheEnd(trackBezierEditorD)
+//		
+//		// Hardcode control points programmatically for a single bezier curve
+//		trackBezierEditorD.setStart(backStarboardTrackPoint)
+//		trackBezierEditorD.setCP1(backStarboardTrackPoint.x-30, backStarboardTrackPoint.y, backStarboardTrackPoint.z)
+//		trackBezierEditorD.setCP2(starboardBackTrackPoint.x, starboardBackTrackPoint.y-30, starboardBackTrackPoint.z)
+//		trackBezierEditorD.setEnd(starboardBackTrackPoint)
+//		
+//		// Append another bezier curve
+//		trackBezierEditorD.addBezierToTheEnd(trackBezierEditorE)
+//		
+//		// Hardcode control points programmatically for a single bezier curve
+//		trackBezierEditorE.setStart(starboardBackTrackPoint)
+//		trackBezierEditorE.setCP1(starboardBackTrackPoint.x, starboardBackTrackPoint.y+50, starboardBackTrackPoint.z)
+//		trackBezierEditorE.setCP2(starboardFrontTrackPoint.x, starboardFrontTrackPoint.y-50, starboardFrontTrackPoint.z)
+//		trackBezierEditorE.setEnd(starboardFrontTrackPoint)
+//		
+//		// Add all the bezier point-wise transformations to a list, to generate a polygon later for extrusion
+//		ArrayList<Transform> trackBezTrans = []
+//		trackBezTrans.addAll(trackBezierEditorA.transforms())
+//		trackBezTrans.addAll(trackBezierEditorB.transforms())
+//		trackBezTrans.addAll(trackBezierEditorC.transforms())
+//		trackBezTrans.addAll(trackBezierEditorD.transforms())
+//		trackBezTrans.addAll(trackBezierEditorE.transforms())
+//		
+//		// Create an array of CSG objects to display the cartesian manipulators later
+//		ArrayList<CSG> trackManips = []
+//		trackManips.addAll(trackBezierEditorA.getCSG())
+//		trackManips.addAll(trackBezierEditorB.getCSG())
+//		trackManips.addAll(trackBezierEditorC.getCSG())
+//		trackManips.addAll(trackBezierEditorD.getCSG())
+//		trackManips.addAll(trackBezierEditorE.getCSG())
+//		
+//		List<Vector3d> trackPoly = [new Vector3d(-bayWidth.getMM()/2, bayDepth.getMM()/2,0),
+//									new Vector3d(-bayWidth.getMM()/2, -bayDepth.getMM()/2,0),
+//									new Vector3d(bayWidth.getMM()/2, -bayDepth.getMM()/2,0),
+//									new Vector3d(bayWidth.getMM()/2, bayDepth.getMM()/2,0)]
+//		for(Transform trans : trackBezTrans) {
+//			trackPoly.add(new Vector3d(trans.getX(),trans.getY(),trans.getZ()))
+//		}
+//		CSG trackShelfBez = Extrude.points(new Vector3d(0,0,boardThickness.getMM()),trackPoly)
+//		
+//		// Select either bezier track shelf or primitives track shelf
+//		CSG trackShelf = trackShelfBez
+//		def trackTrans = new Transform()
+//								.movex(0)
+//								.movey(0)
+//								.movez(railElevation.getMM())
+////	    trackShelf = trackShelf.transformed(trackTrans)
+//		
+//		// Save trackShelf to a temporary CSG so that addTabs uses the correct edge lengths
+//		CSG trackShelfTemp = trackShelf
+//		
+//		// Add tabs to the Y- side
+//		returned = trackShelfTemp.addTabs(new Vector3d(0, -1, 0), screwDiameter);
+//		trackShelf = trackShelf.union(returned.get(0));
+//		fasteners.addAll(returned.subList(1, returned.size()));
+//		
+//		// Add tabs to the X+ side
+//		returned = trackShelfTemp.addTabs(new Vector3d(1, 0, 0), screwDiameter);
+//		trackShelf = trackShelf.union(returned.get(0));
+//		fasteners.addAll(returned.subList(1, returned.size()));
+//		
+//		// Add tabs to the X- side
+//		returned = trackShelfTemp.addTabs(new Vector3d(-1, 0, 0), screwDiameter);
+//		trackShelf = trackShelf.union(returned.get(0));
+//		fasteners.addAll(returned.subList(1, returned.size()));
 		
 		CSG portWall = new Cube(boardThickness.getMM(),bayDepth.getMM(),bayHeight.getMM()/2).toCSG()
 			.movex(bayWidth.getMM()/2 + boardThickness.getMM()/2)
 			.movez(bayHeight.getMM()/4)
 		CSG starboardWall = portWall.mirrorx()
-		portWall = portWall.difference(plantShelf).difference(trackShelf).difference(fasteners)
-		starboardWall = starboardWall.difference(plantShelf).difference(trackShelf).difference(fasteners)
+		portWall = portWall.difference(plantGuide).difference(fasteners)//.difference(trackShelf)
+		starboardWall = starboardWall.difference(plantGuide).difference(fasteners)//.difference(trackShelf)
 		
 		// Save portWall to a temporary CSG so that addTabs uses the correct edge lengths
 		CSG wallTemp = portWall
@@ -294,44 +295,44 @@ return new ICadGenerator(){
 			.movex(0)
 			.movey(-bayDepth.getMM()/2-boardThickness.getMM()/2)
 			.movez(bayHeight.getMM()/4)
-		backWall = backWall.difference(plantShelf).difference(trackShelf).difference(portWall).difference(starboardWall).difference(fasteners)
+		backWall = backWall.difference(plantGuide).difference(trackShelf).difference(portWall).difference(starboardWall).difference(fasteners)
 		
-		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		
-//		// define two input vectors and circle radius
-//		def p1s = portForwardTrackPoint
-//		def p1e = portBackTrackPoint
-//		def p2s = backStarboardTrackPoint
-//		def p2e = backPortTrackPoint
-//		def radius = turningRadius.getMM()
-		
-		def p1s = new Vector3d(5, 0, 0)
-		def p1e = new Vector3d(5, 5, 0)
-		def p2s = new Vector3d(0, 5, 0)
-		def p2e = new Vector3d(5, 5, 0)
-		def radius = 1
-		
-		// call the function to get the tangent points
-		def points = getTangentPoints(p1s, p1e, p2s, p2e, radius)
-		
-		// print the results
-		println("Tangent point 1: ${points[0]}") // expected output: [5, 4, 0]
-		println("Tangent point 2: ${points[1]}") // expected output: [4, 5, 0]
-		
-		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		
+////		// define two input vectors and circle radius
+////		def p1s = portForwardTrackPoint
+////		def p1e = portBackTrackPoint
+////		def p2s = backStarboardTrackPoint
+////		def p2e = backPortTrackPoint
+////		def radius = turningRadius.getMM()
+//		
+//		def p1s = new Vector3d(5, 0, 0)
+//		def p1e = new Vector3d(5, 5, 0)
+//		def p2s = new Vector3d(0, 5, 0)
+//		def p2e = new Vector3d(5, 5, 0)
+//		def radius = 1
+//		
+//		// call the function to get the tangent points
+//		def points = getTangentPoints(p1s, p1e, p2s, p2e, radius)
+//		
+//		// print the results
+//		println("Tangent point 1: ${points[0]}") // expected output: [5, 4, 0]
+//		println("Tangent point 2: ${points[1]}") // expected output: [4, 5, 0]
+//		
+//		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		
 		// Assign each component an assembly step, for the exploded view visualization
-		plantShelf.addAssemblyStep(1, new Transform())
-		trackShelf.addAssemblyStep(2, new Transform().movez(100))
+		plantGuide.addAssemblyStep(1, new Transform())
+//		trackShelf.addAssemblyStep(2, new Transform().movez(100))
 		backWall.addAssemblyStep(3, new Transform().movey(-50))
 		portWall.addAssemblyStep(3, new Transform().movex(50))
 		starboardWall.addAssemblyStep(3, new Transform().movex(-50))
 		
 		// Add colored components to returned list, for rendering
-		back.add(plantShelf.setColor(javafx.scene.paint.Color.MAGENTA))
-		back.add(trackShelf.setColor(javafx.scene.paint.Color.RED))
+		back.add(plantGuide.setColor(javafx.scene.paint.Color.MAGENTA))
+//		back.add(trackShelf.setColor(javafx.scene.paint.Color.RED))
 		back.add(backWall.setColor(javafx.scene.paint.Color.BLUE))
 		back.add(portWall.setColor(javafx.scene.paint.Color.CYAN))
 		back.add(starboardWall.setColor(javafx.scene.paint.Color.AQUAMARINE))
@@ -352,36 +353,36 @@ return new ICadGenerator(){
 		return back;
 	}
 	
-	def getTangentPoints(Vector3d p1s, Vector3d p1e, Vector3d p2s, Vector3d p2e, double radius) {
-	    // Calculate the direction vectors of the two lines
-	    def v1 = p1e.minus(p1s).normalized()
-	    def v2 = p2e.minus(p2s).normalized()
-	
-	    // Calculate the perpendicular vectors to the two lines
-	    def n1 = new Vector3d(-v1.y, v1.x, 0)
-	    def n2 = new Vector3d(-v2.y, v2.x, 0)
-	
-	    // Calculate the intersection point of the two lines
-	    def d = p2s.minus(p1s)
-	    def t = d.cross(n2).z / n1.cross(n2).z
-	    def intersection = p1s.plus(v1.times(t))
-	
-	    // Calculate the two tangent points
-	    def d1 = intersection.minus(p1s)
-	    def d2 = intersection.minus(p2s)
-	    def angle1 = Math.atan2(d1.y, d1.x)
-	    def angle2 = Math.atan2(d2.y, d2.x)
-	    def diff = angle1 - angle2
-	    def dist = radius / Math.abs(Math.sin(diff))
-	    def mid = (d1.plus(d2)).times(0.5)
-	    def normal = new Vector3d(0, 0, 1).cross(mid).normalized()
-	    def offset = normal.times(dist)
-	    def point1 = intersection.plus(d1.normalized().times(dist)).plus(offset)
-	    def point2 = intersection.plus(d2.normalized().times(dist)).minus(offset)
-	
-	    // Return the two tangent points
-	    return [point1, point2]
-	}
+//	def getTangentPoints(Vector3d p1s, Vector3d p1e, Vector3d p2s, Vector3d p2e, double radius) {
+//	    // Calculate the direction vectors of the two lines
+//	    def v1 = p1e.minus(p1s).normalized()
+//	    def v2 = p2e.minus(p2s).normalized()
+//	
+//	    // Calculate the perpendicular vectors to the two lines
+//	    def n1 = new Vector3d(-v1.y, v1.x, 0)
+//	    def n2 = new Vector3d(-v2.y, v2.x, 0)
+//	
+//	    // Calculate the intersection point of the two lines
+//	    def d = p2s.minus(p1s)
+//	    def t = d.cross(n2).z / n1.cross(n2).z
+//	    def intersection = p1s.plus(v1.times(t))
+//	
+//	    // Calculate the two tangent points
+//	    def d1 = intersection.minus(p1s)
+//	    def d2 = intersection.minus(p2s)
+//	    def angle1 = Math.atan2(d1.y, d1.x)
+//	    def angle2 = Math.atan2(d2.y, d2.x)
+//	    def diff = angle1 - angle2
+//	    def dist = radius / Math.abs(Math.sin(diff))
+//	    def mid = (d1.plus(d2)).times(0.5)
+//	    def normal = new Vector3d(0, 0, 1).cross(mid).normalized()
+//	    def offset = normal.times(dist)
+//	    def point1 = intersection.plus(d1.normalized().times(dist)).plus(offset)
+//	    def point2 = intersection.plus(d2.normalized().times(dist)).minus(offset)
+//	
+//	    // Return the two tangent points
+//	    return [point1, point2]
+//	}
 
 	
 }
