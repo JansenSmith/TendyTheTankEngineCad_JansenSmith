@@ -51,7 +51,7 @@ class PathController{
 		tfLengths = unitTFs.collect{
 			return Math.sqrt(Math.pow(it.getX(), 2) + Math.pow(it.getY(), 2)+Math.pow(it.getZ(), 2))
 		}
-		//println tfLengths
+		println tfLengths
 
 
 
