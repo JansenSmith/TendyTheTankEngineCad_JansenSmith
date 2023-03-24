@@ -27,7 +27,7 @@ return new ICadGenerator(){
 		
 		for (CSG c : liftImportCAD) {
 		    String name = c.getName()
-		    if (name != null && !name.toLowerCase().contains("bucket")) {
+		    if (name != null && !name.toLowerCase().contains("bucket")) {	// add everything BUT the bucket to the liftCAD list
 		        liftCAD.add(c)
 		    }
 		}
@@ -377,8 +377,21 @@ return new ICadGenerator(){
 //		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		
-		TransformNR liftTrans = TransformFactory.csgToNR(new Transform().rotz(-90))
-		arg0.getAllDHChains().get(0).setRobotToFiducialTransform(liftTrans)
+		Transform liftTrans = new Transform().rotz(-90).movez(railElevation.getMM()/2)
+		TransformNR liftTransNR = TransformFactory.csgToNR(liftTrans)
+		DHParameterKinematics liftLimb = arg0.getAllDHChains().get(0)
+		liftLimb.setRobotToFiducialTransform(liftTransNR)
+//		ArrayList<CSG> liftImportCAD = lift.generateCad(liftLimb, 0)
+//		for (CSG c : liftImportCAD) {
+//		    String name = c.getName()
+//		    if (name != null && !name.toLowerCase().contains("board-1-link-0")) {
+//		        double liftMinY = c.getMinY()
+//		    }
+//		}
+//		liftTrans = liftTrans.movey(liftMinY)
+//		liftTransNR = TransformFactory.csgToNR(liftTrans)
+//		liftLimb.setRobotToFiducialTransform(liftTransNR)
+		
 		
 		// Assign each component an assembly step, for the exploded view visualization
 		gridBoard.addAssemblyStep(1, new Transform())
