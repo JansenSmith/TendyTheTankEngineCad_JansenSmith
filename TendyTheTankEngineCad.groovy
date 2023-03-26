@@ -42,7 +42,7 @@ return new ICadGenerator(){
 		// Initialize an empty ArrayList to hold the generated CSG objects
 		ArrayList<CSG> back =[]
 		
-		def production = false
+		def production = false		// boolean for tracking whether to use system optimization to avoid long operations that can be performed when the design is ready for production
 		
 		// Define URL link to the GitHub repo for this robot
 		def URL="https://github.com/TechnocopiaPlant/TendyTheTankEngine.git"
